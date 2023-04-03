@@ -15,6 +15,7 @@ USTRUCT(BlueprintType)
 struct FPlaceableObjectData : public FTableRowBase
 {
 	GENERATED_BODY()
+	UE_LOG(LogTemp, Log, TEXT("TEST"));
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	AObjectPlacer_Base_Class* ObjectPlacerClass;
