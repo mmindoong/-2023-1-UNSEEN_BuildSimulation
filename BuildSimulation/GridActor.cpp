@@ -33,6 +33,11 @@ void AGridActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+void AGridActor::SetGridOffsetFromGround(float Offset)
+{
+	GridOffsetFromGround = Offset;
+	InstancedStaticMeshComponent->SetWorldLocation(FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + GridOffsetFromGround));
+}
 
 
 void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FVector2D TileCount, bool UseEnvironment)
@@ -46,10 +51,8 @@ void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FVector2D T
 
 	InstancedStaticMeshComponent->ClearInstances();
 
-
 	// Find the bottom left corner of our grid and Center grid, to start spawning tiles from there.
 	CalculateCenterandBottomLeft();
-
 
 	for (int Index = 0; Index <= round(GridTileCount.X) - 1; Index++)
 	{
@@ -123,19 +126,6 @@ void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FVector2D T
 
 
 
-void AGridActor::SetGridBottomLeftCornerLocation(const FVector& InLocation)
-{
-	GridBottomLeftCornerLocation = InLocation;
-}
-
-void AGridActor::SetGridCenterLocation(const FVector& InLocation)
-{
-	GridCenterLocation = InLocation;
-
-}
-
-
-
 FVector AGridActor::SnapVectorToVector(FVector CurrentPosition, FVector SnapValue)
 {
 
@@ -160,16 +150,14 @@ float AGridActor::SnapFlaotToFloat(float CurrentLocation, float GridSize)
 void AGridActor::CalculateCenterandBottomLeft()
 {
 	FVector NewVector = SnapVectorToVector(GridCenterLocation, GridTileSize);
-	FVector2D AlignVector;
+	FIntPoint AlignVector;
 
-	AlignVector.X = static_cast<float>(FMath::Fmod(GridTileCount.X, 2.0f)) == 0.0f ? 0.0f : 1.0f;
-	AlignVector.Y = static_cast<float>(FMath::Fmod(GridTileCount.Y, 2.0f)) == 0.0f ? 0.0f : 1.0f;
-
+	AlignVector.X = static_cast<float>(FMath::Fmod(GridTileCount.X, 2)) == 0.0f ? 0.0f : 1.0f;
+	AlignVector.Y = static_cast<float>(FMath::Fmod(GridTileCount.Y, 2)) == 0.0f ? 0.0f : 1.0f;
 
 	FVector2D Divided = (GridTileCount - AlignVector) / 2.0f;
 	FVector GridCount = FVector(Divided.X * GridTileSize.X, Divided.Y * GridTileSize.Y, 1.0f);
 	
-
 	SetGridCenterLocation(NewVector);
 	SetGridBottomLeftCornerLocation(NewVector - GridCount);
 	
@@ -208,9 +196,52 @@ bool AGridActor::TraceforGround(FVector& Location)
 	}
 	return false;
 }
-void AGridActor::SetGridOffsetFromGround(float Offset)
+
+
+void AGridActor::PressedLMB()
 {
-	GridOffsetFromGround = Offset;
-	InstancedStaticMeshComponent->SetWorldLocation(FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z+GridOffsetFromGround));
+	SetInteractStarted(true);
+	SelectPlaceableObject();
+
 }
+
+void AGridActor::SelectPlaceableObject()
+{
+	if (GetBuildToolEnabled() == false)
+	{
+		// 1. Placeable Object 아래에 커서가 존재할 경우
+		if(IsValid(GetPlaceableObjectUnderCursor()))
+		{
+			// 1-1. Placeable Object 객체가 기존에 존재했는지 체크->오브젝트 상태변경
+			if (IsValid(GetSelectedPlaceableObject()))
+			{
+				if (GetPlaceableObjectUnderCursor() != GetSelectedPlaceableObject())
+				{
+					//TODO: Set Object Seletectd State
+				}
+			}
+			SetSelectedPlaceableObject(PlaceableObjectUnderCursor);
+			SetPlaceableObjectSelected(true);
+			//TODO: Set Object Seletectd State
+		}
+		// 2. Placeable Object 아래에 커서가 존재하지 않는 경우
+		else
+		{
+			// Placeable Object가 존재하는지?
+			SetPlaceableObjectSelected(false);
+			if (IsValid(GetSelectedPlaceableObject()))
+			{
+				//TODO: Set Object Seletectd State
+			}
+		}
+	}
+}
+
+
+
+
+
+
+
+
 

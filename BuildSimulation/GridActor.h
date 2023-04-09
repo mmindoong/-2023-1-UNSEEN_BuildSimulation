@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "PlaceableObejct_Base_Class.h"
+
 #include "GridActor.generated.h"
 
 UCLASS()
@@ -26,19 +28,38 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
 	void SetGridOffsetFromGround(float Offset);
-	
-	// Getter
-	FORCEINLINE const FVector& GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
-	FORCEINLINE const FVector& GetGridCenterLocation() const { return GridCenterLocation; }
 
-	// Setter
-	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation);
-	FORCEINLINE void SetGridCenterLocation(const FVector& InLocation);
-	
+	UFUNCTION(BlueprintCallable, Category = "Main")
+	void PressedLMB();
+
+
+	// Getter & Setter
+	FORCEINLINE const FVector& GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
+	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation) { GridBottomLeftCornerLocation = InLocation; }
+
+	FORCEINLINE const FVector GetGridCenterLocation() const { return GridCenterLocation; }
+	FORCEINLINE void SetGridCenterLocation(const FVector& InLocation) { GridCenterLocation = InLocation; }
+
+	FORCEINLINE const bool& GetInteractStarted() const { return InteractStarted; }
+	FORCEINLINE void SetInteractStarted(const bool& InInteractStarted) { InteractStarted = InInteractStarted; }
+
+	FORCEINLINE const bool& GetBuildToolEnabled() const { return BuildToolEnabled; }
+	FORCEINLINE void SetBuildToolEnabled(const bool& InBuildToolEnabled) { BuildToolEnabled = InBuildToolEnabled; }
+
+	FORCEINLINE APlaceableObejct_Base_Class* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
+	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObejct_Base_Class* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }
+
+	FORCEINLINE APlaceableObejct_Base_Class* GetSelectedPlaceableObject() const { return SelectedPlaceableObject; }
+	FORCEINLINE void SetSelectedPlaceableObject(APlaceableObejct_Base_Class* InSelectedPlaceableObject) { SelectedPlaceableObject = InSelectedPlaceableObject; }
+
+	FORCEINLINE const bool& GetPlaceableObjectSelected() const { return PlaceableObjectSelected; }
+	FORCEINLINE void SetPlaceableObjectSelected(const bool& InPlaceableObjectSelected) { PlaceableObjectSelected = InPlaceableObjectSelected; }
+
 
 protected:
 	UPROPERTY(VisibleAnywhere)
 	UInstancedStaticMeshComponent* InstancedStaticMeshComponent;
+
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
@@ -48,7 +69,7 @@ private:
 	FVector GridTileSize = FVector(200.0f, 200.0f, 100.0f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
-	FVector2D GridTileCount = FVector2D(3.0f, 3.0f);
+	FIntPoint GridTileCount = FIntPoint(3, 3);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
 	FVector GridBottomLeftCornerLocation = FVector(0.0f, 0.0f, 0.0f);
@@ -59,17 +80,27 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
 	float GridOffsetFromGround = -2.0f;
 
-	UFUNCTION()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
+	bool InteractStarted = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
+	APlaceableObejct_Base_Class* PlaceableObjectUnderCursor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
+	APlaceableObejct_Base_Class* SelectedPlaceableObject;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
+	bool PlaceableObjectSelected = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
+	bool BuildToolEnabled = false;
+
 	FVector SnapVectorToVector(FVector V1, FVector V2);
-
-	UFUNCTION()
 	float SnapFlaotToFloat(float CurrentLocation, float GridSize);
-
-	UFUNCTION()
 	void CalculateCenterandBottomLeft();
-
-	UFUNCTION()
 	bool TraceforGround(FVector& Location);
+	
+	void SelectPlaceableObject();
 
 
 };

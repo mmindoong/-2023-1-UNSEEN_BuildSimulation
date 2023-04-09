@@ -5,17 +5,16 @@
 #include "Engine/DataTable.h"
 #include "UObject/NoExportTypes.h"
 #include "Math.h"
-#include "ObjectPlacer_Base_Class.h"
-#include "PlaceableObejct_Base_Class.h"
 #include "ConstructionCost.h"
 #include "PlaceableObjectsData.generated.h"
 
+class APlaceableObejct_Base_Class;
+class AObjectPlacer_Base_Class;
 
 USTRUCT(BlueprintType)
 struct FPlaceableObjectData : public FTableRowBase
 {
 	GENERATED_BODY()
-	UE_LOG(LogTemp, Log, TEXT("TEST"));
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	AObjectPlacer_Base_Class* ObjectPlacerClass;
