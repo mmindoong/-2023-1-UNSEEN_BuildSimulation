@@ -11,7 +11,7 @@ class BUILDSIMULATION_API AGridActor : public AActor
 {
 	GENERATED_BODY()
 
-	public:
+public:
 	// Sets default values for this actor's properties
 	AGridActor();
 
@@ -32,29 +32,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Main")
 	void PressedLMB();
 
+	UFUNCTION(BlueprintCallable, Category = "Cell")
+	TArray<FIntPoint> GetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount);
 
-	// Getter & Setter
-	FORCEINLINE const FVector& GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
-	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation) { GridBottomLeftCornerLocation = InLocation; }
+	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
+	void SetOccupancyData(FIntPoint Cell, bool IsOccupied);
+
+	UFUNCTION(BlueprintCallable, Category = "Data|Object")
+	void SetObjectData(FIntPoint Cell, APlaceableObejct_Base_Class* PlaceableObject);
 
 	FORCEINLINE const FVector GetGridCenterLocation() const { return GridCenterLocation; }
 	FORCEINLINE void SetGridCenterLocation(const FVector& InLocation) { GridCenterLocation = InLocation; }
-
-	FORCEINLINE const bool& GetInteractStarted() const { return InteractStarted; }
-	FORCEINLINE void SetInteractStarted(const bool& InInteractStarted) { InteractStarted = InInteractStarted; }
-
-	FORCEINLINE const bool& GetBuildToolEnabled() const { return BuildToolEnabled; }
-	FORCEINLINE void SetBuildToolEnabled(const bool& InBuildToolEnabled) { BuildToolEnabled = InBuildToolEnabled; }
-
-	FORCEINLINE APlaceableObejct_Base_Class* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
-	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObejct_Base_Class* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }
-
-	FORCEINLINE APlaceableObejct_Base_Class* GetSelectedPlaceableObject() const { return SelectedPlaceableObject; }
-	FORCEINLINE void SetSelectedPlaceableObject(APlaceableObejct_Base_Class* InSelectedPlaceableObject) { SelectedPlaceableObject = InSelectedPlaceableObject; }
-
-	FORCEINLINE const bool& GetPlaceableObjectSelected() const { return PlaceableObjectSelected; }
-	FORCEINLINE void SetPlaceableObjectSelected(const bool& InPlaceableObjectSelected) { PlaceableObjectSelected = InPlaceableObjectSelected; }
-
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -95,12 +83,45 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
 	bool BuildToolEnabled = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
+	TMap<FIntPoint, int32> OccupancyData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
+	TMap<FIntPoint, APlaceableObejct_Base_Class*> ObjectData;
+
+
 	FVector SnapVectorToVector(FVector V1, FVector V2);
 	float SnapFlaotToFloat(float CurrentLocation, float GridSize);
 	void CalculateCenterandBottomLeft();
 	bool TraceforGround(FVector& Location);
-	
 	void SelectPlaceableObject();
 
+	// Getter & Setter
+	FORCEINLINE FVector GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
+	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation) { GridBottomLeftCornerLocation = InLocation; }
+
+	FORCEINLINE FIntPoint GetGridTileCount() const { return GridTileCount; }
+	FORCEINLINE void SetGridTileCount(const FIntPoint& InGridTileCount) { GridTileCount = InGridTileCount; }
+
+	FORCEINLINE bool GetInteractStarted() const { return InteractStarted; }
+	FORCEINLINE void SetInteractStarted(const bool& InInteractStarted) { InteractStarted = InInteractStarted; }
+
+	FORCEINLINE bool GetBuildToolEnabled() const { return BuildToolEnabled; }
+	FORCEINLINE void SetBuildToolEnabled(const bool& InBuildToolEnabled) { BuildToolEnabled = InBuildToolEnabled; }
+
+	FORCEINLINE APlaceableObejct_Base_Class* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
+	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObejct_Base_Class* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }
+
+	FORCEINLINE APlaceableObejct_Base_Class* GetSelectedPlaceableObject() const { return SelectedPlaceableObject; }
+	FORCEINLINE void SetSelectedPlaceableObject(APlaceableObejct_Base_Class* InSelectedPlaceableObject) { SelectedPlaceableObject = InSelectedPlaceableObject; }
+
+	FORCEINLINE bool GetPlaceableObjectSelected() const { return PlaceableObjectSelected; }
+	FORCEINLINE void SetPlaceableObjectSelected(const bool& InPlaceableObjectSelected) { PlaceableObjectSelected = InPlaceableObjectSelected; }
+
+	FORCEINLINE TMap<FIntPoint, int32> GetOccupancyData() const { return OccupancyData; }
+	FORCEINLINE void SetOccupancyData(const TMap<FIntPoint, int32> InOccupancyData) { OccupancyData = InOccupancyData; }
+
+	FORCEINLINE TMap<FIntPoint, APlaceableObejct_Base_Class*> GetObjectData() const { return ObjectData; }
+	FORCEINLINE void SetObjectData(const TMap<FIntPoint, APlaceableObejct_Base_Class*> InObjectData) { ObjectData = InObjectData; }
 
 };

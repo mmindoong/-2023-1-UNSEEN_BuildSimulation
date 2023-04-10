@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
 #include "PlaceableObjectsData.h"
+#include "DynamicPlaceableObjectData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "PlaceableObejct_Base_Class.generated.h"
@@ -32,43 +33,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void SetupPlaceableObject();
 
-	// Getter & Setter
-	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
-	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
-
-	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
-	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
-
-	FORCEINLINE bool GetBorderEnabled() const { return BorderEnabled; }
-	FORCEINLINE void SetBorderEnabled(bool InBorderEnabled) { BorderEnabled = InBorderEnabled; }
-
-	FORCEINLINE bool GetOutlineEnabled() const { return OutlineEnabled; }
-	FORCEINLINE void SetOutlineEnabled(bool InOutlineEnabled) { OutlineEnabled = InOutlineEnabled; }
-
-	FORCEINLINE bool GetHPBarEnabled() const { return HPBarEnabled; }
-	FORCEINLINE void SetHPBarEnabled(bool InHPBarEnabled) { HPBarEnabled = InHPBarEnabled; }
-
-	FORCEINLINE float GetHP() const { return HP; }
-	FORCEINLINE void SetHP(float InHP) { HP = InHP; }
-
-	FORCEINLINE float GetMaxHP() const { return MaxHP; }
-	FORCEINLINE void SetMaxHP(float InMaxHP) { HP = InMaxHP; }
-
-	FORCEINLINE int32 GetObjectDirection() const { return ObjectDirection; }
-	FORCEINLINE void SetObjectDirection(int InObjectDirection) { ObjectDirection = InObjectDirection; }
-
-	FORCEINLINE FDataTableRowHandle GetObjectNameInTable() const { return ObjectNameInTable; }
-	FORCEINLINE void SetObjectNameInTable(FDataTableRowHandle InObjectNameInTable) { ObjectNameInTable = InObjectNameInTable; }
-
-	FORCEINLINE float GetStartingHealthPercent() const { return StartingHealthPercent; }
-	FORCEINLINE void SetStartingHealthPercent(float InStartingHealthPercent) { StartingHealthPercent = InStartingHealthPercent; }
-
-	FORCEINLINE AGridActor* GetBuildManager() const { return BuildManager; }
-	FORCEINLINE void SetBuildManager(AGridActor* InBuildManager) { BuildManager = InBuildManager; }
 
 
 private:
 	FPlaceableObjectData* ObjectData;
+	FDynamicPlaceableObjectData data = FDynamicPlaceableObjectData();
+	FDynamicPlaceableObjectData* ObjectDynamicData = &data;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	FIntPoint ObjectSize = FIntPoint(1,1);
@@ -91,6 +61,15 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	int32 ObjectDirection;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
+	FIntPoint OccupiedCenterCell = FIntPoint(0, 0);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
+	TArray<FIntPoint> OccupiedCells;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
+	float ObjectHeight;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	class UDataTable* PlaceableObjectTable;
 
@@ -102,5 +81,51 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid System", meta = (AllowPrivateAccess = "true"))
 	AGridActor* BuildManager;
+
+	// Getter & Setter
+	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
+	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
+
+	FORCEINLINE FDynamicPlaceableObjectData* GetObjectDynamicData() const { return ObjectDynamicData; }
+	FORCEINLINE void SetObjectDynamicData(FDynamicPlaceableObjectData* InObjectDynamicData) { ObjectDynamicData = InObjectDynamicData; }
+
+	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
+	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
+
+	FORCEINLINE bool GetBorderEnabled() const { return BorderEnabled; }
+	FORCEINLINE void SetBorderEnabled(bool InBorderEnabled) { BorderEnabled = InBorderEnabled; }
+
+	FORCEINLINE bool GetOutlineEnabled() const { return OutlineEnabled; }
+	FORCEINLINE void SetOutlineEnabled(bool InOutlineEnabled) { OutlineEnabled = InOutlineEnabled; }
+
+	FORCEINLINE bool GetHPBarEnabled() const { return HPBarEnabled; }
+	FORCEINLINE void SetHPBarEnabled(bool InHPBarEnabled) { HPBarEnabled = InHPBarEnabled; }
+
+	FORCEINLINE float GetHP() const { return HP; }
+	FORCEINLINE void SetHP(float InHP) { HP = InHP; }
+
+	FORCEINLINE float GetMaxHP() const { return MaxHP; }
+	FORCEINLINE void SetMaxHP(float InMaxHP) { HP = InMaxHP; }
+
+	FORCEINLINE int32 GetObjectDirection() const { return ObjectDirection; }
+	FORCEINLINE void SetObjectDirection(int InObjectDirection) { ObjectDirection = InObjectDirection; }
+
+	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
+	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }
+
+	FORCEINLINE TArray<FIntPoint> GetOccupiedCells() const { return OccupiedCells; }
+	FORCEINLINE void SetOccupiedCells(TArray<FIntPoint> InOccupiedCells) { OccupiedCells = InOccupiedCells; }
+
+	FORCEINLINE float GetObjectHeight() const { return ObjectHeight; }
+	FORCEINLINE void SetObjectHeight(float InObjectHeight) { ObjectHeight = InObjectHeight; }
+
+	FORCEINLINE FDataTableRowHandle GetObjectNameInTable() const { return ObjectNameInTable; }
+	FORCEINLINE void SetObjectNameInTable(FDataTableRowHandle InObjectNameInTable) { ObjectNameInTable = InObjectNameInTable; }
+
+	FORCEINLINE float GetStartingHealthPercent() const { return StartingHealthPercent; }
+	FORCEINLINE void SetStartingHealthPercent(float InStartingHealthPercent) { StartingHealthPercent = InStartingHealthPercent; }
+
+	FORCEINLINE AGridActor* GetBuildManager() const { return BuildManager; }
+	FORCEINLINE void SetBuildManager(AGridActor* InBuildManager) { BuildManager = InBuildManager; }
 
 };

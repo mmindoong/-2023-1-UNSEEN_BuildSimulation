@@ -12,6 +12,16 @@ USTRUCT(BlueprintType)
 struct FDynamicPlaceableObjectData
 {
 	GENERATED_BODY()
+	
+	FDynamicPlaceableObjectData()
+	{
+		HasData = false;
+		BuildManager = nullptr;
+		ObjectCenterCell = FIntPoint(1, 1);
+		Direction = 0;
+		Height = 0.0f;
+		Side = 0;
+	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool HasData;

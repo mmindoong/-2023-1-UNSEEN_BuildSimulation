@@ -43,7 +43,7 @@ void AGridActor::SetGridOffsetFromGround(float Offset)
 void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FVector2D TileCount, bool UseEnvironment)
 {
 	// Save the variables for later. We'll need them as long as the grid is alive.
-	GridCenterLocation = CenterLocation;
+	SetGridCenterLocation(CenterLocation);
 	GridTileSize = TileSize;
 	// Even/Odd to Round
 	GridTileCount.X = round(TileCount.X);
@@ -123,8 +123,6 @@ void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FVector2D T
 		}
 	}
 }
-
-
 
 FVector AGridActor::SnapVectorToVector(FVector CurrentPosition, FVector SnapValue)
 {
@@ -237,8 +235,62 @@ void AGridActor::SelectPlaceableObject()
 	}
 }
 
+TArray<FIntPoint> AGridActor::GetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount)
+{
+	// 설정한 CenterLocation, Tilecount로 Bottom Left Corner 계산
+	SetGridCenterLocation(FVector(CenterLocation.X, CenterLocation.Y, GetGridCenterLocation().Z));
+	SetGridTileCount(TileCount);
+	CalculateCenterandBottomLeft();
 
+	int CurrentCellX = 0;
+	int CurrentCellY = 0;
+	TArray<FIntPoint> Cells;
+	for (int Index = 0; Index <= round(GridTileCount.X) - 1; Index++)
+	{
+		CurrentCellX += Index;
+		for (int Index2 = 0; Index2 <= round(GridTileCount.Y) - 1; Index2++)
+		{
+			CurrentCellY += Index2;
+			Cells.Add(FIntPoint(CurrentCellX, CurrentCellY));
+		}
+	}
+	return Cells;
+}
 
+void AGridActor::SetOccupancyData(FIntPoint Cell, bool IsOccupied)
+{	
+	if (IsOccupied)
+	{
+		if (GetOccupancyData().Find(Cell))
+		{
+			GetOccupancyData().Add(Cell, *GetOccupancyData().Find(Cell));
+		}
+		else
+		{
+			GetOccupancyData().Add(Cell, 1);
+		}
+	}
+	else
+	{
+		if (GetOccupancyData().Find(Cell))
+		{
+			if (*GetOccupancyData().Find(Cell) < 2)
+			{
+				GetOccupancyData().Remove(Cell);
+			}
+			else
+			{
+				GetOccupancyData().Add(Cell, *GetOccupancyData().Find(Cell) - 1);
+			}
+		}
+	}
+}
+
+void AGridActor::SetObjectData(FIntPoint Cell, APlaceableObejct_Base_Class* PlaceableObject)
+{
+	// If the Data already exists, it will be overwritten.
+	GetObjectData().Add(Cell, PlaceableObject);
+}
 
 
 

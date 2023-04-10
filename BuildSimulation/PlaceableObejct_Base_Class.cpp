@@ -17,12 +17,21 @@ APlaceableObejct_Base_Class::APlaceableObejct_Base_Class()
 	PlaceableObjectTable = DT_OBJECTDATA.Object;
 	check(PlaceableObjectTable->GetRowMap().Num() > 0);
 
+	// Set DataTableRowHandle Defualt value
+	FDataTableRowHandle InObjectNameInTable;
+	InObjectNameInTable.DataTable = PlaceableObjectTable;
+	InObjectNameInTable.RowName = FName("House");
+	SetObjectNameInTable(InObjectNameInTable);
+
+	SetupPlaceableObject();
+
 }
 
 // Called when the game starts or when spawned
 void APlaceableObejct_Base_Class::BeginPlay()
 {
 	Super::BeginPlay();
+
 	
 }
 
@@ -35,8 +44,8 @@ void APlaceableObejct_Base_Class::Tick(float DeltaTime)
 
 void APlaceableObejct_Base_Class::SetupPlaceableObject()
 {
-	FName LocalRowName = ObjectNameInTable.RowName;
-	FPlaceableObjectData* OutRow = ObjectNameInTable.DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
+	FName LocalRowName = GetObjectNameInTable().RowName;
+	FPlaceableObjectData* OutRow = GetObjectNameInTable().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
 
 	
 	if (OutRow != nullptr)
@@ -49,24 +58,56 @@ void APlaceableObejct_Base_Class::SetupPlaceableObject()
 		SetBorderEnabled(GetObjectData()->EnableBorder);
 		SetOutlineEnabled(GetObjectData()->EnableOutline);
 		SetHPBarEnabled(GetObjectData()->EnableHpBar);
-
 		SetStartingHealthPercent(FMath::Clamp<float>(GetStartingHealthPercent(), 0.0f, 100.0f));
-		// TODO : If the object was placed on the map in the editor, not during the game, the dynamic data will not be set and the object itself will occupy the necessary cells
+		// If the object was placed on the map in the editor, not during the game, the dynamic data will not be set and the object itself will occupy the necessary cells
 
-		// Set Object -> Object Direction, Object Size
-		int32 b = ((FVector2D)(GetActorForwardVector())).Dot(FVector2D(0.0f, 1.0f)) >= 0.45 ? 1 : 3;
-		int32 b2 = ((FVector2D)(GetActorForwardVector())).Dot(FVector2D(1.0f, 0.0f)) <= -0.45 ? 2 : b;
-		int32 Direction = ((FVector2D)(GetActorForwardVector())).Dot(FVector2D(1.0f, 0.0f)) >= 0.45 ? 0 : b2;
-		SetObjectDirection(Direction);
+		if (GetObjectDynamicData()->HasData)
+		{
+			// Set Object -> Object Direction, Object Size, Build Manager, Occupied Center Cell, Occupied Cells, Object Height
+			SetObjectDirection(GetObjectDynamicData()->Direction);
+			FIntPoint ReturnValue = GetObjectDirection() == 0 || GetObjectDirection() == 2 ? FIntPoint(GetObjectSize().X, GetObjectSize().Y) : FIntPoint(GetObjectSize().Y, GetObjectSize().X);
+			SetObjectSize(ReturnValue);
+			// Set Build Manager
+			SetBuildManager(GetObjectDynamicData()->BuildManager);
+			// Set Occupied Center Cell
+			SetOccupiedCenterCell(GetObjectDynamicData()->ObjectCenterCell);
+			// Set Occupied Cells array
+			SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(GetOccupiedCenterCell(), GetObjectSize()));
+			// Set Object Height
+			SetObjectHeight(GetObjectDynamicData()->Height);
 
-		FIntPoint ReturnValue = GetObjectDirection() == 0 || GetObjectDirection() == 2 ? FIntPoint(GetObjectSize().X, GetObjectSize().Y) : FIntPoint(GetObjectSize().Y, GetObjectSize().X);
-		SetObjectSize(ReturnValue);
-		
-		// Set Build Manager
-		SetBuildManager(Cast<AGridActor>(UGameplayStatics::GetActorOfClass(GetWorld(), AGridActor::StaticClass())));
-		// TODO : Get Cells in Rectangular Area
+			// TODO : Update Resources Value
+		}
+		else
+		{
+			// Set Object -> Object Direction, Object Size
+			int32 b = ((FVector2D)(GetActorForwardVector())).Dot(FVector2D(0.0f, 1.0f)) >= 0.45 ? 1 : 3;
+			int32 b2 = ((FVector2D)(GetActorForwardVector())).Dot(FVector2D(1.0f, 0.0f)) <= -0.45 ? 2 : b;
+			int32 Direction = ((FVector2D)(GetActorForwardVector())).Dot(FVector2D(1.0f, 0.0f)) >= 0.45 ? 0 : b2;
+			SetObjectDirection(Direction);
+			FIntPoint ReturnValue = GetObjectDirection() == 0 || GetObjectDirection() == 2 ? FIntPoint(GetObjectSize().X, GetObjectSize().Y) : FIntPoint(GetObjectSize().Y, GetObjectSize().X);
+			SetObjectSize(ReturnValue);
 
-
-
+			
+			// Set Build Manager
+			SetBuildManager(Cast<AGridActor>(UGameplayStatics::GetActorOfClass(GetWorld(), AGridActor::StaticClass())));
+			if (IsValid(GetBuildManager()))
+			{
+				GetBuildManager()->SetGridCenterLocation(GetActorLocation());
+				FIntPoint CenterCell = FIntPoint(GetBuildManager()->GetGridCenterLocation().X, GetBuildManager()->GetGridCenterLocation().Y);
+				//Set Occupied Cells array
+				SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(CenterCell, GetObjectSize()));
+			}
+		}
+		if (IsValid(GetBuildManager()))
+		{
+			// Build Manger에 점유된 셀 정보 세팅해주기
+			for (FIntPoint cells : GetOccupiedCells())
+			{
+				GetBuildManager()->SetOccupancyData(cells, true);
+				GetBuildManager()->SetObjectData(cells, this);
+			}
+		}
 	}
+	
 }
