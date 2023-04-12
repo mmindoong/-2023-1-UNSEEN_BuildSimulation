@@ -88,6 +88,6 @@
 [Visual Studio]: https://img.shields.io/badge/Visual%20Studio-5C2D91?style=for-the-badge&logo=Visual%20Studio&logoColor=white
 [VS-url]: https://visualstudio.microsoft.com/ko/
 [Github]: https://img.shields.io/badge/Github-5C2D91?style=for-the-badge&logo=Github&logoColor=white
-[Github-url]: https://github.com/ssw03270/Moon-Greeting-Festival
+[Github-url]: https://github.com/mmindoong
 [C++]: https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=C++&logoColor=white
 [Unreal]: https://img.shields.io/badge/Unreal-0E1128?style=for-the-badge&logo=Unreal-Engine&logoColor=white
