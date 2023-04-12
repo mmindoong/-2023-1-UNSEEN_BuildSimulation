@@ -9,6 +9,7 @@
 // Sets default values
 APlaceableObejct_Base_Class::APlaceableObejct_Base_Class()
 {
+
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	FString ObjectDataPath = TEXT("/Game/Blueprints/Data/DT_PlaceableObjectData");
@@ -16,6 +17,18 @@ APlaceableObejct_Base_Class::APlaceableObejct_Base_Class()
 	check(DT_OBJECTDATA.Succeeded());
 	PlaceableObjectTable = DT_OBJECTDATA.Object;
 	check(PlaceableObjectTable->GetRowMap().Num() > 0);
+
+
+	SphereVisual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
+	SphereVisual->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/StarterContent/Shapes/Shape_Sphere"));
+	if (SphereVisualAsset.Succeeded())
+	{
+		SphereVisual->SetStaticMesh(SphereVisualAsset.Object);
+		SphereVisual->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
+		SphereVisual->SetWorldScale3D(FVector(0.8f));
+	}
+
 
 	// Set DataTableRowHandle Defualt value
 	FDataTableRowHandle InObjectNameInTable;
@@ -32,7 +45,19 @@ void APlaceableObejct_Base_Class::BeginPlay()
 {
 	Super::BeginPlay();
 
-	
+	if (SphereVisual != nullptr)
+	{
+		SphereVisual->OnBeginCursorOver.AddDynamic(this, &APlaceableObejct_Base_Class::OnBeginCursorOver);
+		UE_LOG(LogTemp, Warning, TEXT("AddDynamic"));
+	}
+	else
+		UE_LOG(LogTemp, Warning, TEXT("NULL"));
+}
+
+
+void APlaceableObejct_Base_Class::OnBeginCursorOver(UPrimitiveComponent* TouchedComponent)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnBeginCursorOver"));
 }
 
 // Called every frame
@@ -55,7 +80,6 @@ void APlaceableObejct_Base_Class::SetupPlaceableObject()
 		SetObjectSize(GetObjectData()->ObjectSize);
 		SetMaxHP(GetObjectData()->HealthPoints);
 		SetHP(GetMaxHP() * GetStartingHealthPercent());
-		SetBorderEnabled(GetObjectData()->EnableBorder);
 		SetOutlineEnabled(GetObjectData()->EnableOutline);
 		SetHPBarEnabled(GetObjectData()->EnableHpBar);
 		SetStartingHealthPercent(FMath::Clamp<float>(GetStartingHealthPercent(), 0.0f, 100.0f));
@@ -72,7 +96,7 @@ void APlaceableObejct_Base_Class::SetupPlaceableObject()
 			// Set Occupied Center Cell
 			SetOccupiedCenterCell(GetObjectDynamicData()->ObjectCenterCell);
 			// Set Occupied Cells array
-			SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(GetOccupiedCenterCell(), GetObjectSize()));
+			SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(FVector(GetOccupiedCenterCell(),100.0f) , GetObjectSize()));
 			// Set Object Height
 			SetObjectHeight(GetObjectDynamicData()->Height);
 
@@ -87,16 +111,14 @@ void APlaceableObejct_Base_Class::SetupPlaceableObject()
 			SetObjectDirection(Direction);
 			FIntPoint ReturnValue = GetObjectDirection() == 0 || GetObjectDirection() == 2 ? FIntPoint(GetObjectSize().X, GetObjectSize().Y) : FIntPoint(GetObjectSize().Y, GetObjectSize().X);
 			SetObjectSize(ReturnValue);
-
 			
 			// Set Build Manager
 			SetBuildManager(Cast<AGridActor>(UGameplayStatics::GetActorOfClass(GetWorld(), AGridActor::StaticClass())));
 			if (IsValid(GetBuildManager()))
 			{
-				GetBuildManager()->SetGridCenterLocation(GetActorLocation());
-				FIntPoint CenterCell = FIntPoint(GetBuildManager()->GetGridCenterLocation().X, GetBuildManager()->GetGridCenterLocation().Y);
 				//Set Occupied Cells array
-				SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(CenterCell, GetObjectSize()));
+				UE_LOG(LogTemp, Log, TEXT("Setup Object"));
+				SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(GetActorLocation(), GetObjectSize()));
 			}
 		}
 		if (IsValid(GetBuildManager()))
@@ -110,4 +132,47 @@ void APlaceableObejct_Base_Class::SetupPlaceableObject()
 		}
 	}
 	
+}
+
+void APlaceableObejct_Base_Class::SetupOutline()
+{
+	/*
+	if (GetOutlineEnabled())
+	{
+		TArray<UActorComponent*> components = GetOwner()->GetComponentsByClass(UStaticMeshComponent::StaticClass());
+
+		for (int32 i = 0; i < components.Num(); i++)
+		{
+			GetMeshesforoutline().Add(Cast<UStaticMeshComponent>(components[i]));
+		}
+		for (int32 j = 0; j < GetMeshesforoutline().Num(); j++)
+		{
+			GetMeshesforoutline()[j]->SetRenderCustomDepth(true);
+		}
+	}
+	*/
+}
+
+void APlaceableObejct_Base_Class::EnableObjectOutline(bool IsEnable)
+{
+	for (int32 i= 0; i < GetMeshesforoutline().Num(); i++)
+	{
+		if (IsEnable)
+		{
+			if (GetBuildManager()->GetDemolitionToolEnabled() && GetObjectSide() == 0)
+			{
+				GetMeshesforoutline()[i]->SetCustomDepthStencilValue(1);
+				
+			}
+			else
+			{
+				GetMeshesforoutline()[i]->SetCustomDepthStencilValue(1);
+			}
+		}
+		else
+		{
+			GetMeshesforoutline()[i]->SetCustomDepthStencilValue(0);
+		}
+			
+	}
 }

@@ -62,9 +62,6 @@ struct FPlaceableObjectData : public FTableRowBase
 	FText Description;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	bool EnableBorder;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	bool EnableOutline;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")

@@ -22,9 +22,17 @@ public:
 	// Sets default values for this actor's properties
 	APlaceableObejct_Base_Class();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* SphereVisual;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void OnBeginCursorOver(UPrimitiveComponent* TouchedComponent);
+
+	
 
 public:	
 	// Called every frame
@@ -32,6 +40,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void SetupPlaceableObject();
+
+	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
+	void SetupOutline();
+
+	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
+	void EnableObjectOutline(bool IsEnable);
 
 
 
@@ -42,9 +56,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	FIntPoint ObjectSize = FIntPoint(1,1);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
-	bool BorderEnabled = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	bool OutlineEnabled = true;
@@ -70,11 +81,17 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	float ObjectHeight;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
+	TArray<UStaticMeshComponent*> Meshesforoutline;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	class UDataTable* PlaceableObjectTable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	FDataTableRowHandle ObjectNameInTable;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
+	int32 ObjectSide;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	float StartingHealthPercent;
@@ -91,9 +108,6 @@ private:
 
 	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
 	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
-
-	FORCEINLINE bool GetBorderEnabled() const { return BorderEnabled; }
-	FORCEINLINE void SetBorderEnabled(bool InBorderEnabled) { BorderEnabled = InBorderEnabled; }
 
 	FORCEINLINE bool GetOutlineEnabled() const { return OutlineEnabled; }
 	FORCEINLINE void SetOutlineEnabled(bool InOutlineEnabled) { OutlineEnabled = InOutlineEnabled; }
@@ -119,6 +133,9 @@ private:
 	FORCEINLINE float GetObjectHeight() const { return ObjectHeight; }
 	FORCEINLINE void SetObjectHeight(float InObjectHeight) { ObjectHeight = InObjectHeight; }
 
+	FORCEINLINE TArray<UStaticMeshComponent*> GetMeshesforoutline() const { return Meshesforoutline; }
+	FORCEINLINE void SetMeshesforoutline(TArray<UStaticMeshComponent*> InMeshesforoutline) { Meshesforoutline = InMeshesforoutline; }
+
 	FORCEINLINE FDataTableRowHandle GetObjectNameInTable() const { return ObjectNameInTable; }
 	FORCEINLINE void SetObjectNameInTable(FDataTableRowHandle InObjectNameInTable) { ObjectNameInTable = InObjectNameInTable; }
 
@@ -128,4 +145,6 @@ private:
 	FORCEINLINE AGridActor* GetBuildManager() const { return BuildManager; }
 	FORCEINLINE void SetBuildManager(AGridActor* InBuildManager) { BuildManager = InBuildManager; }
 
+	FORCEINLINE int32 GetObjectSide() const { return ObjectSide; }
+	FORCEINLINE void SetObjectSide(int32 InObjectSide) { ObjectSide = InObjectSide; }
 };

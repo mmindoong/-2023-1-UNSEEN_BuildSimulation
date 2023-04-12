@@ -40,11 +40,13 @@ void AGridActor::SetGridOffsetFromGround(float Offset)
 }
 
 
-void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FVector2D TileCount, bool UseEnvironment)
+void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount, bool UseEnvironment)
 {
 	// Save the variables for later. We'll need them as long as the grid is alive.
 	SetGridCenterLocation(CenterLocation);
-	GridTileSize = TileSize;
+	SetGridTileSize(TileSize);
+	SetGridTileCount(TileCount);
+
 	// Even/Odd to Round
 	GridTileCount.X = round(TileCount.X);
 	GridTileCount.Y = round(TileCount.Y);
@@ -205,7 +207,7 @@ void AGridActor::PressedLMB()
 
 void AGridActor::SelectPlaceableObject()
 {
-	if (GetBuildToolEnabled() == false)
+	if (GetBuildToolEnabled() == false) 
 	{
 		// 1. Placeable Object 아래에 커서가 존재할 경우
 		if(IsValid(GetPlaceableObjectUnderCursor()))
@@ -235,12 +237,11 @@ void AGridActor::SelectPlaceableObject()
 	}
 }
 
-TArray<FIntPoint> AGridActor::GetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount)
+TArray<FIntPoint> AGridActor::GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount)
 {
 	// 설정한 CenterLocation, Tilecount로 Bottom Left Corner 계산
-	SetGridCenterLocation(FVector(CenterLocation.X, CenterLocation.Y, GetGridCenterLocation().Z));
+	SetGridCenterLocation(CenterLocation);
 	SetGridTileCount(TileCount);
-	CalculateCenterandBottomLeft();
 
 	int CurrentCellX = 0;
 	int CurrentCellY = 0;
@@ -254,6 +255,7 @@ TArray<FIntPoint> AGridActor::GetCellsinRectangularArea(FIntPoint CenterLocation
 			Cells.Add(FIntPoint(CurrentCellX, CurrentCellY));
 		}
 	}
+	SpawnGrid(CenterLocation, GetGridTileSize(), TileCount);
 	return Cells;
 }
 

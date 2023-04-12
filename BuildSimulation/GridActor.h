@@ -24,7 +24,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	void SpawnGrid(FVector CenterLocation, FVector TileSize, FVector2D TileCount, bool UseEnvironment=false);
+	void SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount, bool UseEnvironment=false);
 
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
 	void SetGridOffsetFromGround(float Offset);
@@ -33,7 +33,7 @@ public:
 	void PressedLMB();
 
 	UFUNCTION(BlueprintCallable, Category = "Cell")
-	TArray<FIntPoint> GetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount);
+	TArray<FIntPoint> GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount);
 
 	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
 	void SetOccupancyData(FIntPoint Cell, bool IsOccupied);
@@ -43,6 +43,15 @@ public:
 
 	FORCEINLINE const FVector GetGridCenterLocation() const { return GridCenterLocation; }
 	FORCEINLINE void SetGridCenterLocation(const FVector& InLocation) { GridCenterLocation = InLocation; }
+
+	FORCEINLINE FVector GetGridTileSize() const { return GridTileSize; }
+	FORCEINLINE void SetGridTileSize(const FVector& InGridTileSize) { GridTileSize = InGridTileSize; }
+
+	FORCEINLINE FIntPoint GetGridTileCount() const { return GridTileCount; }
+	FORCEINLINE void SetGridTileCount(const FIntPoint& InGridTileCount) { GridTileCount = InGridTileCount; }
+
+	FORCEINLINE bool GetDemolitionToolEnabled() const { return DemolitionToolEnabled; }
+	FORCEINLINE void SetDemolitionToolEnabled(const bool& InDemolitionToolEnabled) { DemolitionToolEnabled = InDemolitionToolEnabled; }
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -83,6 +92,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
 	bool BuildToolEnabled = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
+	bool DemolitionToolEnabled = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
 	TMap<FIntPoint, int32> OccupancyData;
 
@@ -99,9 +111,6 @@ private:
 	// Getter & Setter
 	FORCEINLINE FVector GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
 	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation) { GridBottomLeftCornerLocation = InLocation; }
-
-	FORCEINLINE FIntPoint GetGridTileCount() const { return GridTileCount; }
-	FORCEINLINE void SetGridTileCount(const FIntPoint& InGridTileCount) { GridTileCount = InGridTileCount; }
 
 	FORCEINLINE bool GetInteractStarted() const { return InteractStarted; }
 	FORCEINLINE void SetInteractStarted(const bool& InInteractStarted) { InteractStarted = InInteractStarted; }
