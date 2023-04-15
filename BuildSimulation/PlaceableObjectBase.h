@@ -9,21 +9,21 @@
 #include "DynamicPlaceableObjectData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "PlaceableObejct_Base_Class.generated.h"
+#include "PlaceableObjectBase.generated.h"
 
-class AGridActor;
 
 UCLASS()
-class BUILDSIMULATION_API APlaceableObejct_Base_Class : public AActor
+class BUILDSIMULATION_API APlaceableObjectBase : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	APlaceableObejct_Base_Class();
+	APlaceableObjectBase();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* SphereVisual;
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -32,7 +32,9 @@ protected:
 	UFUNCTION()
 	void OnBeginCursorOver(UPrimitiveComponent* TouchedComponent);
 
-	
+	UFUNCTION()
+	void CallUpdateResourceAmountEvent(FConstructionCost InCost);
+
 
 public:	
 	// Called every frame
@@ -46,13 +48,21 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void EnableObjectOutline(bool IsEnable);
+	
+	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
+	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }
+	
 
+	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
+	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
 
+	FORCEINLINE FDynamicPlaceableObjectData* GetObjectDynamicData() const { return ObjectDynamicData; }
+	FORCEINLINE void SetObjectDynamicData(FDynamicPlaceableObjectData* InObjectDynamicData) { ObjectDynamicData = InObjectDynamicData; }
 
 private:
 	FPlaceableObjectData* ObjectData;
-	FDynamicPlaceableObjectData data = FDynamicPlaceableObjectData();
-	FDynamicPlaceableObjectData* ObjectDynamicData = &data;
+	FDynamicPlaceableObjectData Data = FDynamicPlaceableObjectData();
+	FDynamicPlaceableObjectData* ObjectDynamicData = &Data;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	FIntPoint ObjectSize = FIntPoint(1,1);
@@ -76,9 +86,6 @@ private:
 	FIntPoint OccupiedCenterCell = FIntPoint(0, 0);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
-	TArray<FIntPoint> OccupiedCells;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	float ObjectHeight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
@@ -96,18 +103,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	float StartingHealthPercent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid System", meta = (AllowPrivateAccess = "true"))
-	AGridActor* BuildManager;
-
 	// Getter & Setter
 	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
 	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
-
-	FORCEINLINE FDynamicPlaceableObjectData* GetObjectDynamicData() const { return ObjectDynamicData; }
-	FORCEINLINE void SetObjectDynamicData(FDynamicPlaceableObjectData* InObjectDynamicData) { ObjectDynamicData = InObjectDynamicData; }
-
-	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
-	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
 
 	FORCEINLINE bool GetOutlineEnabled() const { return OutlineEnabled; }
 	FORCEINLINE void SetOutlineEnabled(bool InOutlineEnabled) { OutlineEnabled = InOutlineEnabled; }
@@ -123,13 +121,7 @@ private:
 
 	FORCEINLINE int32 GetObjectDirection() const { return ObjectDirection; }
 	FORCEINLINE void SetObjectDirection(int InObjectDirection) { ObjectDirection = InObjectDirection; }
-
-	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
-	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }
-
-	FORCEINLINE TArray<FIntPoint> GetOccupiedCells() const { return OccupiedCells; }
-	FORCEINLINE void SetOccupiedCells(TArray<FIntPoint> InOccupiedCells) { OccupiedCells = InOccupiedCells; }
-
+	
 	FORCEINLINE float GetObjectHeight() const { return ObjectHeight; }
 	FORCEINLINE void SetObjectHeight(float InObjectHeight) { ObjectHeight = InObjectHeight; }
 
@@ -141,9 +133,6 @@ private:
 
 	FORCEINLINE float GetStartingHealthPercent() const { return StartingHealthPercent; }
 	FORCEINLINE void SetStartingHealthPercent(float InStartingHealthPercent) { StartingHealthPercent = InStartingHealthPercent; }
-
-	FORCEINLINE AGridActor* GetBuildManager() const { return BuildManager; }
-	FORCEINLINE void SetBuildManager(AGridActor* InBuildManager) { BuildManager = InBuildManager; }
 
 	FORCEINLINE int32 GetObjectSide() const { return ObjectSide; }
 	FORCEINLINE void SetObjectSide(int32 InObjectSide) { ObjectSide = InObjectSide; }

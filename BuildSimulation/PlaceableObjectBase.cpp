@@ -1,15 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "PlaceableObejct_Base_Class.h"
+#include "PlaceableObjectBase.h"
 #include "PlaceableObjectsData.h"
-#include "GridActor.h"
+#include "BuildManager.h"
 
 
 // Sets default values
-APlaceableObejct_Base_Class::APlaceableObejct_Base_Class()
+APlaceableObjectBase::APlaceableObjectBase()
 {
-
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	FString ObjectDataPath = TEXT("/Game/Blueprints/Data/DT_PlaceableObjectData");
@@ -17,8 +16,7 @@ APlaceableObejct_Base_Class::APlaceableObejct_Base_Class()
 	check(DT_OBJECTDATA.Succeeded());
 	PlaceableObjectTable = DT_OBJECTDATA.Object;
 	check(PlaceableObjectTable->GetRowMap().Num() > 0);
-
-
+	
 	SphereVisual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
 	SphereVisual->SetupAttachment(RootComponent);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/StarterContent/Shapes/Shape_Sphere"));
@@ -28,8 +26,7 @@ APlaceableObejct_Base_Class::APlaceableObejct_Base_Class()
 		SphereVisual->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
 		SphereVisual->SetWorldScale3D(FVector(0.8f));
 	}
-
-
+	
 	// Set DataTableRowHandle Defualt value
 	FDataTableRowHandle InObjectNameInTable;
 	InObjectNameInTable.DataTable = PlaceableObjectTable;
@@ -41,33 +38,40 @@ APlaceableObejct_Base_Class::APlaceableObejct_Base_Class()
 }
 
 // Called when the game starts or when spawned
-void APlaceableObejct_Base_Class::BeginPlay()
+void APlaceableObjectBase::BeginPlay()
 {
 	Super::BeginPlay();
 
 	if (SphereVisual != nullptr)
 	{
-		SphereVisual->OnBeginCursorOver.AddDynamic(this, &APlaceableObejct_Base_Class::OnBeginCursorOver);
+		SphereVisual->OnBeginCursorOver.AddDynamic(this, &APlaceableObjectBase::OnBeginCursorOver);
 		UE_LOG(LogTemp, Warning, TEXT("AddDynamic"));
 	}
 	else
 		UE_LOG(LogTemp, Warning, TEXT("NULL"));
+	
+	
 }
 
 
-void APlaceableObejct_Base_Class::OnBeginCursorOver(UPrimitiveComponent* TouchedComponent)
+void APlaceableObjectBase::OnBeginCursorOver(UPrimitiveComponent* TouchedComponent)
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnBeginCursorOver"));
 }
 
+void APlaceableObjectBase::CallUpdateResourceAmountEvent(FConstructionCost InCost)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Green, FString::Printf(TEXT("CallDeleFunc_Single_OneParam %d"), InCost.Coal));
+}
+
 // Called every frame
-void APlaceableObejct_Base_Class::Tick(float DeltaTime)
+void APlaceableObjectBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-void APlaceableObejct_Base_Class::SetupPlaceableObject()
+void APlaceableObjectBase::SetupPlaceableObject()
 {
 	FName LocalRowName = GetObjectNameInTable().RowName;
 	FPlaceableObjectData* OutRow = GetObjectNameInTable().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
@@ -92,15 +96,15 @@ void APlaceableObejct_Base_Class::SetupPlaceableObject()
 			FIntPoint ReturnValue = GetObjectDirection() == 0 || GetObjectDirection() == 2 ? FIntPoint(GetObjectSize().X, GetObjectSize().Y) : FIntPoint(GetObjectSize().Y, GetObjectSize().X);
 			SetObjectSize(ReturnValue);
 			// Set Build Manager
-			SetBuildManager(GetObjectDynamicData()->BuildManager);
+			//SetBuildManager(GetObjectDynamicData()->BuildManager);
 			// Set Occupied Center Cell
 			SetOccupiedCenterCell(GetObjectDynamicData()->ObjectCenterCell);
 			// Set Occupied Cells array
-			SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(FVector(GetOccupiedCenterCell(),100.0f) , GetObjectSize()));
+			//SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(FVector(GetOccupiedCenterCell(),100.0f) , GetObjectSize()));
 			// Set Object Height
 			SetObjectHeight(GetObjectDynamicData()->Height);
 
-			// TODO : Update Resources Value
+			// todo : Update Resources Value
 		}
 		else
 		{
@@ -111,30 +115,11 @@ void APlaceableObejct_Base_Class::SetupPlaceableObject()
 			SetObjectDirection(Direction);
 			FIntPoint ReturnValue = GetObjectDirection() == 0 || GetObjectDirection() == 2 ? FIntPoint(GetObjectSize().X, GetObjectSize().Y) : FIntPoint(GetObjectSize().Y, GetObjectSize().X);
 			SetObjectSize(ReturnValue);
-			
-			// Set Build Manager
-			SetBuildManager(Cast<AGridActor>(UGameplayStatics::GetActorOfClass(GetWorld(), AGridActor::StaticClass())));
-			if (IsValid(GetBuildManager()))
-			{
-				//Set Occupied Cells array
-				UE_LOG(LogTemp, Log, TEXT("Setup Object"));
-				SetOccupiedCells(GetBuildManager()->GetCellsinRectangularArea(GetActorLocation(), GetObjectSize()));
-			}
-		}
-		if (IsValid(GetBuildManager()))
-		{
-			// Build Manger에 점유된 셀 정보 세팅해주기
-			for (FIntPoint cells : GetOccupiedCells())
-			{
-				GetBuildManager()->SetOccupancyData(cells, true);
-				GetBuildManager()->SetObjectData(cells, this);
-			}
 		}
 	}
-	
 }
 
-void APlaceableObejct_Base_Class::SetupOutline()
+void APlaceableObjectBase::SetupOutline()
 {
 	/*
 	if (GetOutlineEnabled())
@@ -153,13 +138,13 @@ void APlaceableObejct_Base_Class::SetupOutline()
 	*/
 }
 
-void APlaceableObejct_Base_Class::EnableObjectOutline(bool IsEnable)
+void APlaceableObjectBase::EnableObjectOutline(bool IsEnable)
 {
 	for (int32 i= 0; i < GetMeshesforoutline().Num(); i++)
 	{
 		if (IsEnable)
 		{
-			if (GetBuildManager()->GetDemolitionToolEnabled() && GetObjectSide() == 0)
+			if (GetObjectSide() == 0)
 			{
 				GetMeshesforoutline()[i]->SetCustomDepthStencilValue(1);
 				

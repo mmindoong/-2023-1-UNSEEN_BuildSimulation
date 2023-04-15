@@ -2,22 +2,28 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PlaceableObejct_Base_Class.h"
+#include "PlaceableObjectBase.h"
+#include "PlaceableObjectsData.h"
+#include "BuildManager.generated.h"
 
-#include "GridActor.generated.h"
+DECLARE_DELEGATE_OneParam(FUpdateResourceAmount, FConstructionCost PlayerResources);
 
 UCLASS()
-class BUILDSIMULATION_API AGridActor : public AActor
+class BUILDSIMULATION_API ABuildManager : public AActor
 {
 	GENERATED_BODY()
-
 public:
 	// Sets default values for this actor's properties
-	AGridActor();
-
+	ABuildManager();
+	FUpdateResourceAmount UpdateResourceAmountEvent;
+	
+	UFUNCTION(BlueprintCallable, Category = "Spawn")
+	void BuildPlaceableObject();
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	// Called every frame
@@ -26,12 +32,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
 	void SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount, bool UseEnvironment=false);
 
-	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	void SetGridOffsetFromGround(float Offset);
-
-	UFUNCTION(BlueprintCallable, Category = "Main")
-	void PressedLMB();
-
 	UFUNCTION(BlueprintCallable, Category = "Cell")
 	TArray<FIntPoint> GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount);
 
@@ -39,8 +39,8 @@ public:
 	void SetOccupancyData(FIntPoint Cell, bool IsOccupied);
 
 	UFUNCTION(BlueprintCallable, Category = "Data|Object")
-	void SetObjectData(FIntPoint Cell, APlaceableObejct_Base_Class* PlaceableObject);
-
+	void SetObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
+	
 	FORCEINLINE const FVector GetGridCenterLocation() const { return GridCenterLocation; }
 	FORCEINLINE void SetGridCenterLocation(const FVector& InLocation) { GridCenterLocation = InLocation; }
 
@@ -57,6 +57,15 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UInstancedStaticMeshComponent* InstancedStaticMeshComponent;
 
+	UFUNCTION(BlueprintCallable, Category = "Main")
+	void UpdateResouresValue(FConstructionCost Resource, bool Add, bool Subtract);
+
+	UFUNCTION(BlueprintCallable, Category = "GridSystem")
+	void SetGridOffsetFromGround(float Offset);
+
+	UFUNCTION(BlueprintCallable, Category = "Main")
+	void PressedLMB();
+	
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
@@ -81,10 +90,10 @@ private:
 	bool InteractStarted = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	APlaceableObejct_Base_Class* PlaceableObjectUnderCursor;
+	APlaceableObjectBase* PlaceableObjectUnderCursor;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	APlaceableObejct_Base_Class* SelectedPlaceableObject;
+	APlaceableObjectBase* SelectedPlaceableObject;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
 	bool PlaceableObjectSelected = false;
@@ -99,14 +108,31 @@ private:
 	TMap<FIntPoint, int32> OccupancyData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
-	TMap<FIntPoint, APlaceableObejct_Base_Class*> ObjectData;
+	TMap<FIntPoint, APlaceableObjectBase*> ObjectData;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player", meta = (AllowPrivateAccess = "true"))
+	APlayerController* PlayerController;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player", meta = (AllowPrivateAccess = "true"))
+	FConstructionCost PlayerResources;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class APlaceableObjectBase> PlaceableObjectBaseClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
+	APlaceableObjectBase* PlaceableObjectBase;
+	
+	// Funtion
 	FVector SnapVectorToVector(FVector V1, FVector V2);
+	
 	float SnapFlaotToFloat(float CurrentLocation, float GridSize);
+	
 	void CalculateCenterandBottomLeft();
+	
 	bool TraceforGround(FVector& Location);
+	
 	void SelectPlaceableObject();
+	
 
 	// Getter & Setter
 	FORCEINLINE FVector GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
@@ -118,11 +144,11 @@ private:
 	FORCEINLINE bool GetBuildToolEnabled() const { return BuildToolEnabled; }
 	FORCEINLINE void SetBuildToolEnabled(const bool& InBuildToolEnabled) { BuildToolEnabled = InBuildToolEnabled; }
 
-	FORCEINLINE APlaceableObejct_Base_Class* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
-	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObejct_Base_Class* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }
+	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
+	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }
 
-	FORCEINLINE APlaceableObejct_Base_Class* GetSelectedPlaceableObject() const { return SelectedPlaceableObject; }
-	FORCEINLINE void SetSelectedPlaceableObject(APlaceableObejct_Base_Class* InSelectedPlaceableObject) { SelectedPlaceableObject = InSelectedPlaceableObject; }
+	FORCEINLINE APlaceableObjectBase* GetSelectedPlaceableObject() const { return SelectedPlaceableObject; }
+	FORCEINLINE void SetSelectedPlaceableObject(APlaceableObjectBase* InSelectedPlaceableObject) { SelectedPlaceableObject = InSelectedPlaceableObject; }
 
 	FORCEINLINE bool GetPlaceableObjectSelected() const { return PlaceableObjectSelected; }
 	FORCEINLINE void SetPlaceableObjectSelected(const bool& InPlaceableObjectSelected) { PlaceableObjectSelected = InPlaceableObjectSelected; }
@@ -130,7 +156,16 @@ private:
 	FORCEINLINE TMap<FIntPoint, int32> GetOccupancyData() const { return OccupancyData; }
 	FORCEINLINE void SetOccupancyData(const TMap<FIntPoint, int32> InOccupancyData) { OccupancyData = InOccupancyData; }
 
-	FORCEINLINE TMap<FIntPoint, APlaceableObejct_Base_Class*> GetObjectData() const { return ObjectData; }
-	FORCEINLINE void SetObjectData(const TMap<FIntPoint, APlaceableObejct_Base_Class*> InObjectData) { ObjectData = InObjectData; }
+	FORCEINLINE TMap<FIntPoint, APlaceableObjectBase*> GetObjectData() const { return ObjectData; }
+	FORCEINLINE void SetObjectData(const TMap<FIntPoint, APlaceableObjectBase*> InObjectData) { ObjectData = InObjectData; }
 
+	FORCEINLINE APlayerController* GetPlayerController() const {return PlayerController;}
+	FORCEINLINE void SetPlayerController(APlayerController* InPlayerController) { PlayerController = InPlayerController; }
+
+	FORCEINLINE FConstructionCost GetPlayerResources() const {return PlayerResources;}
+	FORCEINLINE void SetPlayerResources(const FConstructionCost InPlayerResources) { PlayerResources = InPlayerResources; }
+
+	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectBase() const {return PlaceableObjectBase;}
+	FORCEINLINE void SetPlaceableObjectBase(APlaceableObjectBase* InPlaceableObjectBase) { PlaceableObjectBase = InPlaceableObjectBase; }
+	
 };

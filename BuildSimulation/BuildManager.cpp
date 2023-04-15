@@ -1,12 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "GridActor.h"
+#include "BuildManager.h"
 #include "Components/InstancedStaticMeshComponent.h"
-#include "Math/UnrealMath.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values
-AGridActor::AGridActor()
+ABuildManager::ABuildManager()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -19,28 +18,67 @@ AGridActor::AGridActor()
 
 }
 
+void ABuildManager::BuildPlaceableObject()
+{
+	FVector SpawnLocation = GetActorLocation(); //todo : Spawn 위치를 Cell Under Cursor로 변경
+	FRotator rotator;
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	GetWorld()->SpawnActor<AActor>(PlaceableObjectBaseClass, SpawnLocation, rotator, SpawnParams );
+	SetPlaceableObjectBase(Cast<APlaceableObjectBase>(UGameplayStatics::GetActorOfClass(GetWorld(),ABuildManager::StaticClass())));
+	
+	// Build Manger에서 점유된 셀 정보 세팅해주기
+	if(GetPlaceableObjectBase()->GetObjectDynamicData()->HasData)
+	{
+		TArray<FIntPoint> GetOccupiedCells = GetCellsinRectangularArea(FVector(GetPlaceableObjectBase()->GetOccupiedCenterCell().X,GetPlaceableObjectBase()->GetOccupiedCenterCell().Y,100.0f), GetPlaceableObjectBase()->GetObjectSize());
+		for (FIntPoint cells : GetOccupiedCells)
+		{
+			SetOccupancyData(cells, true);
+			SetObjectData(cells, GetPlaceableObjectBase());
+		}
+	}
+	else // Editor 상에서 진행한 경우
+	{
+		TArray<FIntPoint> GetOccupiedCells = GetCellsinRectangularArea(GetPlaceableObjectBase()->GetActorLocation(), GetPlaceableObjectBase()->GetObjectSize());
+		for (FIntPoint cells : GetOccupiedCells)
+		{
+			SetOccupancyData(cells, true);
+			SetObjectData(cells, GetPlaceableObjectBase());
+		}
+	}
+}
+
 
 // Called when the game starts or when spawned
-void AGridActor::BeginPlay()
+void ABuildManager::BeginPlay()
 {
 	Super::BeginPlay();
+	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	
+	
+}
 
+void ABuildManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	// Delegate Delete
+	UpdateResourceAmountEvent.Unbind();
 }
 
 // Called every frame
-void AGridActor::Tick(float DeltaTime)
+void ABuildManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
-void AGridActor::SetGridOffsetFromGround(float Offset)
+void ABuildManager::SetGridOffsetFromGround(float Offset)
 {
 	GridOffsetFromGround = Offset;
 	InstancedStaticMeshComponent->SetWorldLocation(FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + GridOffsetFromGround));
 }
 
 
-void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount, bool UseEnvironment)
+void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount, bool UseEnvironment)
 {
 	// Save the variables for later. We'll need them as long as the grid is alive.
 	SetGridCenterLocation(CenterLocation);
@@ -126,7 +164,7 @@ void AGridActor::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint T
 	}
 }
 
-FVector AGridActor::SnapVectorToVector(FVector CurrentPosition, FVector SnapValue)
+FVector ABuildManager::SnapVectorToVector(FVector CurrentPosition, FVector SnapValue)
 {
 
 	FVector Return;
@@ -138,7 +176,7 @@ FVector AGridActor::SnapVectorToVector(FVector CurrentPosition, FVector SnapValu
 	return Return;
 }
 
-float AGridActor::SnapFlaotToFloat(float CurrentLocation, float GridSize)
+float ABuildManager::SnapFlaotToFloat(float CurrentLocation, float GridSize)
 {
 	float Return = FMath::RoundToInt32(CurrentLocation / GridSize) * GridSize;
 
@@ -147,7 +185,7 @@ float AGridActor::SnapFlaotToFloat(float CurrentLocation, float GridSize)
 }
 
 
-void AGridActor::CalculateCenterandBottomLeft()
+void ABuildManager::CalculateCenterandBottomLeft()
 {
 	FVector NewVector = SnapVectorToVector(GridCenterLocation, GridTileSize);
 	FIntPoint AlignVector;
@@ -155,7 +193,7 @@ void AGridActor::CalculateCenterandBottomLeft()
 	AlignVector.X = static_cast<float>(FMath::Fmod(GridTileCount.X, 2)) == 0.0f ? 0.0f : 1.0f;
 	AlignVector.Y = static_cast<float>(FMath::Fmod(GridTileCount.Y, 2)) == 0.0f ? 0.0f : 1.0f;
 
-	FVector2D Divided = (GridTileCount - AlignVector) / 2.0f;
+	FIntPoint Divided = (GridTileCount - AlignVector) / 2;
 	FVector GridCount = FVector(Divided.X * GridTileSize.X, Divided.Y * GridTileSize.Y, 1.0f);
 	
 	SetGridCenterLocation(NewVector);
@@ -163,7 +201,7 @@ void AGridActor::CalculateCenterandBottomLeft()
 	
 }
 
-bool AGridActor::TraceforGround(FVector& Location)
+bool ABuildManager::TraceforGround(FVector& Location)
 {
 	FVector StartLocation = FVector(Location.X + 0.0f, Location.Y + 0.0f, Location.Z + 1000.0f);
 	FVector EndLocation = FVector(Location.X + 0.0f, Location.Y + 0.0f, Location.Z - 1000.0f);
@@ -198,14 +236,14 @@ bool AGridActor::TraceforGround(FVector& Location)
 }
 
 
-void AGridActor::PressedLMB()
+void ABuildManager::PressedLMB()
 {
 	SetInteractStarted(true);
 	SelectPlaceableObject();
 
 }
 
-void AGridActor::SelectPlaceableObject()
+void ABuildManager::SelectPlaceableObject()
 {
 	if (GetBuildToolEnabled() == false) 
 	{
@@ -217,12 +255,13 @@ void AGridActor::SelectPlaceableObject()
 			{
 				if (GetPlaceableObjectUnderCursor() != GetSelectedPlaceableObject())
 				{
-					//TODO: Set Object Seletectd State
+					// todo: Set Object Seletectd State
+					
 				}
 			}
 			SetSelectedPlaceableObject(PlaceableObjectUnderCursor);
 			SetPlaceableObjectSelected(true);
-			//TODO: Set Object Seletectd State
+			//todo: Set Object Seletectd State
 		}
 		// 2. Placeable Object 아래에 커서가 존재하지 않는 경우
 		else
@@ -231,13 +270,13 @@ void AGridActor::SelectPlaceableObject()
 			SetPlaceableObjectSelected(false);
 			if (IsValid(GetSelectedPlaceableObject()))
 			{
-				//TODO: Set Object Seletectd State
+				//todo: Set Object Seletectd State
 			}
 		}
 	}
 }
 
-TArray<FIntPoint> AGridActor::GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount)
+TArray<FIntPoint> ABuildManager::GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount)
 {
 	// 설정한 CenterLocation, Tilecount로 Bottom Left Corner 계산
 	SetGridCenterLocation(CenterLocation);
@@ -259,7 +298,7 @@ TArray<FIntPoint> AGridActor::GetCellsinRectangularArea(FVector CenterLocation, 
 	return Cells;
 }
 
-void AGridActor::SetOccupancyData(FIntPoint Cell, bool IsOccupied)
+void ABuildManager::SetOccupancyData(FIntPoint Cell, bool IsOccupied)
 {	
 	if (IsOccupied)
 	{
@@ -288,10 +327,65 @@ void AGridActor::SetOccupancyData(FIntPoint Cell, bool IsOccupied)
 	}
 }
 
-void AGridActor::SetObjectData(FIntPoint Cell, APlaceableObejct_Base_Class* PlaceableObject)
+void ABuildManager::SetObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject)
 {
 	// If the Data already exists, it will be overwritten.
 	GetObjectData().Add(Cell, PlaceableObject);
+}
+
+void ABuildManager::UpdateResouresValue(FConstructionCost Resource, bool Add, bool Subtract)
+{
+	if(Add)
+	{
+		FFoodData AddFood = FFoodData(GetPlayerResources().Food.Rice+Resource.Food.Rice,
+			GetPlayerResources().Food.Fruit+ Resource.Food.Fruit,
+			GetPlayerResources().Food.Meat+ Resource.Food.Meat);
+		FConstructionCost AddConstruction = FConstructionCost(GetPlayerResources().Gold+Resource.Gold,
+			AddFood,
+			GetPlayerResources().Wood+Resource.Wood,
+			GetPlayerResources().Rock+Resource.Rock,
+			GetPlayerResources().Iron+Resource.Iron,
+			GetPlayerResources().Coal+Resource.Coal);
+		
+		SetPlayerResources(AddConstruction);
+	}
+	else if(Subtract)
+	{
+		FFoodData SubFood = FFoodData(FMath::Clamp(GetPlayerResources().Food.Rice-Resource.Food.Rice,0,GetPlayerResources().Food.Rice-Resource.Food.Rice),
+		FMath::Clamp(GetPlayerResources().Food.Fruit-Resource.Food.Fruit,0,GetPlayerResources().Food.Fruit-Resource.Food.Fruit),
+		FMath::Clamp(GetPlayerResources().Food.Meat-Resource.Food.Meat,0,GetPlayerResources().Food.Meat-Resource.Food.Meat));
+
+		FConstructionCost SubConstruction = FConstructionCost(FMath::Clamp(GetPlayerResources().Gold-Resource.Gold, 0 , GetPlayerResources().Gold-Resource.Gold),
+			SubFood,
+			FMath::Clamp(GetPlayerResources().Wood-Resource.Wood, 0 , GetPlayerResources().Wood-Resource.Wood),
+			FMath::Clamp(GetPlayerResources().Rock-Resource.Rock, 0 , GetPlayerResources().Rock-Resource.Rock),
+			FMath::Clamp(GetPlayerResources().Iron-Resource.Iron, 0 , GetPlayerResources().Iron-Resource.Iron),
+			FMath::Clamp(GetPlayerResources().Coal-Resource.Coal, 0 , GetPlayerResources().Coal-Resource.Coal));
+
+		SetPlayerResources(SubConstruction);
+	}
+	else
+	{
+		FFoodData Food = FFoodData(FMath::Clamp(Resource.Food.Rice,0,Resource.Food.Rice),
+		FMath::Clamp(Resource.Food.Fruit,0,Resource.Food.Fruit),
+		FMath::Clamp(Resource.Food.Meat,0,Resource.Food.Meat));
+		
+		FConstructionCost Construction = FConstructionCost(FMath::Clamp(Resource.Gold, 0, Resource.Gold),
+			Food,
+		FMath::Clamp(Resource.Wood, 0, Resource.Wood),
+		FMath::Clamp(Resource.Rock, 0, Resource.Rock),
+		FMath::Clamp(Resource.Iron, 0, Resource.Iron),
+		FMath::Clamp(Resource.Coal, 0, Resource.Coal));
+
+		SetPlayerResources(Construction);
+	}
+	// Call Event Delegate
+	if(UpdateResourceAmountEvent.IsBound())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Execute")));
+		UpdateResourceAmountEvent.Execute(GetPlayerResources());
+	}
+	
 }
 
 

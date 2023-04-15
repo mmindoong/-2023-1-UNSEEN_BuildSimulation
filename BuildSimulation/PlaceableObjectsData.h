@@ -8,8 +8,8 @@
 #include "ConstructionCost.h"
 #include "PlaceableObjectsData.generated.h"
 
-class APlaceableObejct_Base_Class;
-class AObjectPlacer_Base_Class;
+class APlaceableObjectBase;
+class APlacerObjectBase;
 
 USTRUCT(BlueprintType)
 struct FPlaceableObjectData : public FTableRowBase
@@ -17,10 +17,10 @@ struct FPlaceableObjectData : public FTableRowBase
 	GENERATED_BODY()
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	AObjectPlacer_Base_Class* ObjectPlacerClass;
+	APlacerObjectBase* ObjectPlacerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	APlaceableObejct_Base_Class* PlacaebleObjectClass;
+	APlaceableObjectBase* PlacaebleObjectClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	FConstructionCost ConstructionCost;

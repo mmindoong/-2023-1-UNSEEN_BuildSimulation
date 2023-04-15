@@ -6,7 +6,7 @@
 #include "UObject/NoExportTypes.h"
 #include "DynamicPlaceableObjectData.generated.h"
 
-class AGridActor;
+class ABuildManager;
 
 USTRUCT(BlueprintType)
 struct FDynamicPlaceableObjectData
@@ -16,7 +16,6 @@ struct FDynamicPlaceableObjectData
 	FDynamicPlaceableObjectData()
 	{
 		HasData = false;
-		BuildManager = nullptr;
 		ObjectCenterCell = FIntPoint(1, 1);
 		Direction = 0;
 		Height = 0.0f;
@@ -25,9 +24,6 @@ struct FDynamicPlaceableObjectData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool HasData;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AGridActor* BuildManager;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FIntPoint ObjectCenterCell;

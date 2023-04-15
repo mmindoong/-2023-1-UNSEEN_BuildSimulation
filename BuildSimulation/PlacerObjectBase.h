@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "ObjectPlacer_Base_Class.generated.h"
+#include "PlacerObjectBase.generated.h"
 
 UCLASS()
-class BUILDSIMULATION_API AObjectPlacer_Base_Class : public AActor
+class BUILDSIMULATION_API APlacerObjectBase : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AObjectPlacer_Base_Class();
+	APlacerObjectBase();
 
 protected:
 	// Called when the game starts or when spawned

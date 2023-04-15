@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ObjectPlacer_Base_Class.h"
+#include "PlacerObjectBase.h"
 
 // Sets default values
-AObjectPlacer_Base_Class::AObjectPlacer_Base_Class()
+APlacerObjectBase::APlacerObjectBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -12,14 +12,14 @@ AObjectPlacer_Base_Class::AObjectPlacer_Base_Class()
 }
 
 // Called when the game starts or when spawned
-void AObjectPlacer_Base_Class::BeginPlay()
+void APlacerObjectBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
 // Called every frame
-void AObjectPlacer_Base_Class::Tick(float DeltaTime)
+void APlacerObjectBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
