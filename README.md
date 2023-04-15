@@ -55,9 +55,12 @@
 |__게임 의도 및 목적__|도시를 건설하며 발전시키는 경영 게임의 재미 속에 타워 디펜스의 요소를 넣어 긴장감의 요소를 즐긴다.|
 |__주요 대상층__|전 연령층|
 
+<br/>
+
 ### 기능 명세서
 <div align="center"><img src=https://user-images.githubusercontent.com/70145314/230832427-2e71b47e-710f-42d4-93c7-dc33f5ddf7ae.png width="900"></div> 
 
+<br/>
 
 ### 게임 스토리 및 시나리오
 - 게임은 중세 판타지 시대를 배경으로, 섬을 다스리는 왕이 되어 나만의 도시를 건설하고 쳐들어오는 적들을 타파해야 한다.
@@ -85,6 +88,6 @@
 [Visual Studio]: https://img.shields.io/badge/Visual%20Studio-5C2D91?style=for-the-badge&logo=Visual%20Studio&logoColor=white
 [VS-url]: https://visualstudio.microsoft.com/ko/
 [Github]: https://img.shields.io/badge/Github-5C2D91?style=for-the-badge&logo=Github&logoColor=white
-[Github-url]: https://github.com/ssw03270/Moon-Greeting-Festival
+[Github-url]: https://github.com/mmindoong
 [C++]: https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=C++&logoColor=white
 [Unreal]: https://img.shields.io/badge/Unreal-0E1128?style=for-the-badge&logo=Unreal-Engine&logoColor=white
