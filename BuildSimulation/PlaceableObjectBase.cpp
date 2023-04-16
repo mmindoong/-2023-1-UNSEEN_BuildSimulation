@@ -34,10 +34,11 @@ APlaceableObjectBase::APlaceableObjectBase()
 	SetObjectNameInTable(InObjectNameInTable);
 
 	SetupPlaceableObject();
-
+	SetupOutline();
+	
 }
 
-// Called when the game starts or when spawned
+// Called when the game starts
 void APlaceableObjectBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -45,24 +46,44 @@ void APlaceableObjectBase::BeginPlay()
 	if (SphereVisual != nullptr)
 	{
 		SphereVisual->OnBeginCursorOver.AddDynamic(this, &APlaceableObjectBase::OnBeginCursorOver);
+		SphereVisual->OnEndCursorOver.AddDynamic(this, &APlaceableObjectBase::OnEndCursorOver);
 		UE_LOG(LogTemp, Warning, TEXT("AddDynamic"));
 	}
 	else
 		UE_LOG(LogTemp, Warning, TEXT("NULL"));
+
+	SetupPlaceableObject();
+	SetupOutline();
 	
-	
+}
+
+void APlaceableObjectBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	UpdatePlaceableObjectCursorEvent.Unbind();
 }
 
 
 void APlaceableObjectBase::OnBeginCursorOver(UPrimitiveComponent* TouchedComponent)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnBeginCursorOver"));
+	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, FString::Printf(TEXT("OnBeginCursorOver")));
+	EnableObjectHighlighting(true);
+	if(UpdatePlaceableObjectCursorEvent.IsBound())
+	{
+		UpdatePlaceableObjectCursorEvent.Execute(this, false);
+	}
 }
 
-void APlaceableObjectBase::CallUpdateResourceAmountEvent(FConstructionCost InCost)
+void APlaceableObjectBase::OnEndCursorOver(UPrimitiveComponent* TouchedComponent)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Green, FString::Printf(TEXT("CallDeleFunc_Single_OneParam %d"), InCost.Coal));
+	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, FString::Printf(TEXT("OnEndCursorOver")));
+	EnableObjectHighlighting(false);
+	if(UpdatePlaceableObjectCursorEvent.IsBound())
+	{
+		UpdatePlaceableObjectCursorEvent.Execute(this, true);
+	}
 }
+
 
 // Called every frame
 void APlaceableObjectBase::Tick(float DeltaTime)
@@ -84,8 +105,8 @@ void APlaceableObjectBase::SetupPlaceableObject()
 		SetObjectSize(GetObjectData()->ObjectSize);
 		SetMaxHP(GetObjectData()->HealthPoints);
 		SetHP(GetMaxHP() * GetStartingHealthPercent());
-		SetOutlineEnabled(GetObjectData()->EnableOutline);
-		SetHPBarEnabled(GetObjectData()->EnableHpBar);
+		SetbOutlineEnabled(GetObjectData()->EnableOutline);
+		SetbHPBarEnabled(GetObjectData()->EnableHpBar);
 		SetStartingHealthPercent(FMath::Clamp<float>(GetStartingHealthPercent(), 0.0f, 100.0f));
 		// If the object was placed on the map in the editor, not during the game, the dynamic data will not be set and the object itself will occupy the necessary cells
 
@@ -121,24 +142,44 @@ void APlaceableObjectBase::SetupPlaceableObject()
 
 void APlaceableObjectBase::SetupOutline()
 {
-	/*
-	if (GetOutlineEnabled())
+	if (GetbOutlineEnabled())
 	{
-		TArray<UActorComponent*> components = GetOwner()->GetComponentsByClass(UStaticMeshComponent::StaticClass());
-
-		for (int32 i = 0; i < components.Num(); i++)
+		TArray<UActorComponent*> MeshComponents = GetComponentsByClass(UStaticMeshComponent::StaticClass());
+		if(MeshComponents.Num() > 0)
 		{
-			GetMeshesforoutline().Add(Cast<UStaticMeshComponent>(components[i]));
-		}
-		for (int32 j = 0; j < GetMeshesforoutline().Num(); j++)
-		{
-			GetMeshesforoutline()[j]->SetRenderCustomDepth(true);
+			for (int32 i = 0; i < MeshComponents.Num(); i++)
+			{
+				Meshesforoutline.Add(Cast<UStaticMeshComponent>(MeshComponents[i]));
+			}
+			for (int32 j = 0; j < GetMeshesforoutline().Num(); j++)
+			{
+				GetMeshesforoutline()[j]->SetRenderCustomDepth(true);
+			}	
 		}
 	}
-	*/
 }
 
-void APlaceableObjectBase::EnableObjectOutline(bool IsEnable)
+void APlaceableObjectBase::EnableObjectHighlighting(bool IsEnable)
+{
+	if(IsEnable)
+	{
+		// Outline Setting
+		if(GetbOutlineEnabled())
+			LEnableObjectOutline(true);
+		// HP Bar Setting
+		if(GetbHPBarEnabled()) {} // todo : HP Bar UI Visible
+	}
+	else
+	{
+		// Outline Setting
+		if(GetbOutlineEnabled())
+			LEnableObjectOutline(false);
+		// HP Bar Setting
+		if(GetbHPBarEnabled() && GetbObjectSelected() == false) {} // todo : HP Bar UI UnVisible
+	}
+}
+
+void APlaceableObjectBase::LEnableObjectOutline(bool IsEnable)
 {
 	for (int32 i= 0; i < GetMeshesforoutline().Num(); i++)
 	{

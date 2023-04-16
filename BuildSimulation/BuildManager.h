@@ -6,8 +6,6 @@
 #include "PlaceableObjectsData.h"
 #include "BuildManager.generated.h"
 
-DECLARE_DELEGATE_OneParam(FUpdateResourceAmount, FConstructionCost PlayerResources);
-
 UCLASS()
 class BUILDSIMULATION_API ABuildManager : public AActor
 {
@@ -15,7 +13,6 @@ class BUILDSIMULATION_API ABuildManager : public AActor
 public:
 	// Sets default values for this actor's properties
 	ABuildManager();
-	FUpdateResourceAmount UpdateResourceAmountEvent;
 	
 	UFUNCTION(BlueprintCallable, Category = "Spawn")
 	void BuildPlaceableObject();
@@ -24,6 +21,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	/* Delegate Event Dispatchers  */
+	UFUNCTION()
+	void CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* PlaceableObjectBase, bool IsRemove);
 
 public:
 	// Called every frame
@@ -40,7 +41,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Data|Object")
 	void SetObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
-	
+
+
+	/* Public Getter & Setter */
 	FORCEINLINE const FVector GetGridCenterLocation() const { return GridCenterLocation; }
 	FORCEINLINE void SetGridCenterLocation(const FVector& InLocation) { GridCenterLocation = InLocation; }
 
@@ -50,13 +53,16 @@ public:
 	FORCEINLINE FIntPoint GetGridTileCount() const { return GridTileCount; }
 	FORCEINLINE void SetGridTileCount(const FIntPoint& InGridTileCount) { GridTileCount = InGridTileCount; }
 
-	FORCEINLINE bool GetDemolitionToolEnabled() const { return DemolitionToolEnabled; }
-	FORCEINLINE void SetDemolitionToolEnabled(const bool& InDemolitionToolEnabled) { DemolitionToolEnabled = InDemolitionToolEnabled; }
+	FORCEINLINE bool GetbDemolitionToolEnabled() const { return bDemolitionToolEnabled; }
+	FORCEINLINE void SetbDemolitionToolEnabled(const bool& InDemolitionToolEnabled) { bDemolitionToolEnabled = InDemolitionToolEnabled; }
 
 protected:
 	UPROPERTY(VisibleAnywhere)
 	UInstancedStaticMeshComponent* InstancedStaticMeshComponent;
 
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* StaticMeshComponent;
+	
 	UFUNCTION(BlueprintCallable, Category = "Main")
 	void UpdateResouresValue(FConstructionCost Resource, bool Add, bool Subtract);
 
@@ -68,81 +74,99 @@ protected:
 	
 
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
+	/* Settings Variables */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
 	FVector GridCenterLocation = FVector(0.0f, 0.0f, 0.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
 	FVector GridTileSize = FVector(200.0f, 200.0f, 100.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
 	FIntPoint GridTileCount = FIntPoint(3, 3);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
 	FVector GridBottomLeftCornerLocation = FVector(0.0f, 0.0f, 0.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
-	bool IsTileMap = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpawnGrid", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
 	float GridOffsetFromGround = -2.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	FLinearColor PlayerOutlineColor = FLinearColor::Red;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	FLinearColor EnemyOutlineColor = FLinearColor::Red;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	FLinearColor NeturalOutlineColor = FLinearColor::Yellow;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	UMaterialParameterCollection* Collection;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	UMaterialParameterCollectionInstance* PCI;
+		
+	/* Interact Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool InteractStarted = false;
+	bool bInteractStarted = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
+	bool bPlaceableObjectSelected = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	APlaceableObjectBase* PlaceableObjectUnderCursor;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	APlaceableObjectBase* SelectedPlaceableObject;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool PlaceableObjectSelected = false;
+	/* Enabled Variables */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
+	bool bBuildToolEnabled = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
-	bool BuildToolEnabled = false;
+	bool bDemolitionToolEnabled = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
-	bool DemolitionToolEnabled = false;
-
+	/* Data Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
 	TMap<FIntPoint, int32> OccupancyData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
 	TMap<FIntPoint, APlaceableObjectBase*> ObjectData;
 
+	/* Player Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player", meta = (AllowPrivateAccess = "true"))
 	APlayerController* PlayerController;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player", meta = (AllowPrivateAccess = "true"))
 	FConstructionCost PlayerResources;
 
+	/* Object Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class APlaceableObjectBase> PlaceableObjectBaseClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
 	APlaceableObjectBase* PlaceableObjectBase;
 	
-	// Funtion
-	FVector SnapVectorToVector(FVector V1, FVector V2);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
+	APlaceableObjectBase* PlaceableObjectUnderCursor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
+	APlaceableObjectBase* SelectedPlaceableObject;
 	
-	float SnapFlaotToFloat(float CurrentLocation, float GridSize);
+	/* Local Function Library */
+	FVector LSnapVectorToVector(FVector V1, FVector V2);
 	
-	void CalculateCenterandBottomLeft();
+	float LSnapFlaotToFloat(float CurrentLocation, float GridSize);
 	
-	bool TraceforGround(FVector& Location);
+	void LCalculateCenterandBottomLeft();
 	
 	void SelectPlaceableObject();
+
+	void LSetOutlineColor(int32 ObjectSide);	
 	
 
-	// Getter & Setter
+	/* Getter & Setter */
 	FORCEINLINE FVector GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
 	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation) { GridBottomLeftCornerLocation = InLocation; }
 
-	FORCEINLINE bool GetInteractStarted() const { return InteractStarted; }
-	FORCEINLINE void SetInteractStarted(const bool& InInteractStarted) { InteractStarted = InInteractStarted; }
+	FORCEINLINE bool GetbInteractStarted() const { return bInteractStarted; }
+	FORCEINLINE void SetbInteractStarted(const bool& InInteractStarted) { bInteractStarted = InInteractStarted; }
 
-	FORCEINLINE bool GetBuildToolEnabled() const { return BuildToolEnabled; }
-	FORCEINLINE void SetBuildToolEnabled(const bool& InBuildToolEnabled) { BuildToolEnabled = InBuildToolEnabled; }
+	FORCEINLINE bool GetbBuildToolEnabled() const { return bBuildToolEnabled; }
+	FORCEINLINE void SetbBuildToolEnabled(const bool& InBuildToolEnabled) { bBuildToolEnabled = InBuildToolEnabled; }
 
 	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
 	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }
@@ -150,8 +174,8 @@ private:
 	FORCEINLINE APlaceableObjectBase* GetSelectedPlaceableObject() const { return SelectedPlaceableObject; }
 	FORCEINLINE void SetSelectedPlaceableObject(APlaceableObjectBase* InSelectedPlaceableObject) { SelectedPlaceableObject = InSelectedPlaceableObject; }
 
-	FORCEINLINE bool GetPlaceableObjectSelected() const { return PlaceableObjectSelected; }
-	FORCEINLINE void SetPlaceableObjectSelected(const bool& InPlaceableObjectSelected) { PlaceableObjectSelected = InPlaceableObjectSelected; }
+	FORCEINLINE bool GetbPlaceableObjectSelected() const { return bPlaceableObjectSelected; }
+	FORCEINLINE void SetbPlaceableObjectSelected(const bool& InPlaceableObjectSelected) { bPlaceableObjectSelected = InPlaceableObjectSelected; }
 
 	FORCEINLINE TMap<FIntPoint, int32> GetOccupancyData() const { return OccupancyData; }
 	FORCEINLINE void SetOccupancyData(const TMap<FIntPoint, int32> InOccupancyData) { OccupancyData = InOccupancyData; }
@@ -167,5 +191,8 @@ private:
 
 	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectBase() const {return PlaceableObjectBase;}
 	FORCEINLINE void SetPlaceableObjectBase(APlaceableObjectBase* InPlaceableObjectBase) { PlaceableObjectBase = InPlaceableObjectBase; }
+
+	FORCEINLINE UMaterialParameterCollectionInstance* GetPCI() const { return PCI; }
+	FORCEINLINE void SetPCI(UMaterialParameterCollectionInstance* InPCI) { PCI = InPCI; }
 	
 };

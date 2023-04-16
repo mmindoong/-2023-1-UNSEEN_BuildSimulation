@@ -2,7 +2,12 @@
 
 #include "BuildManager.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Engine/PostProcessVolume.h"
+#include "Kismet/KismetMaterialLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
+
 
 // Sets default values
 ABuildManager::ABuildManager()
@@ -11,41 +16,53 @@ ABuildManager::ABuildManager()
 	PrimaryActorTick.bCanEverTick = true;
 
 	InstancedStaticMeshComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("InstancedStaticMesh"));
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	RootComponent = InstancedStaticMeshComponent;
 
 	SetGridCenterLocation(GetActorLocation());
-	SpawnGrid(GridCenterLocation, GridTileSize, GridTileCount);
-
+	//SpawnGrid(GridCenterLocation, GridTileSize, GridTileCount);
+	// Outline Material Asset Load
+	FString AssetPath = TEXT("/Game/GridBasedBuilder/Materials/Outline/MPC_OutlineCollection");
+	Collection = LoadObject<UMaterialParameterCollection>(nullptr, *AssetPath);
+	
 }
 
+/* 현재는 bp에서 키인풋으로 호출하도록 구현 -> Placer에서 판단 후 호출하도록 수정 */
 void ABuildManager::BuildPlaceableObject()
 {
 	FVector SpawnLocation = GetActorLocation(); //todo : Spawn 위치를 Cell Under Cursor로 변경
 	FRotator rotator;
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
-	GetWorld()->SpawnActor<AActor>(PlaceableObjectBaseClass, SpawnLocation, rotator, SpawnParams );
-	SetPlaceableObjectBase(Cast<APlaceableObjectBase>(UGameplayStatics::GetActorOfClass(GetWorld(),ABuildManager::StaticClass())));
+	if(GetWorld())
+		Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(PlaceableObjectBaseClass, SpawnLocation, rotator, SpawnParams));
+	SetPlaceableObjectBase(Cast<APlaceableObjectBase>(UGameplayStatics::GetActorOfClass(GetWorld(), APlaceableObjectBase::StaticClass())));
 	
-	// Build Manger에서 점유된 셀 정보 세팅해주기
-	if(GetPlaceableObjectBase()->GetObjectDynamicData()->HasData)
+	if(IsValid(GetPlaceableObjectBase()))
 	{
-		TArray<FIntPoint> GetOccupiedCells = GetCellsinRectangularArea(FVector(GetPlaceableObjectBase()->GetOccupiedCenterCell().X,GetPlaceableObjectBase()->GetOccupiedCenterCell().Y,100.0f), GetPlaceableObjectBase()->GetObjectSize());
-		for (FIntPoint cells : GetOccupiedCells)
+		// Build Manger에서 점유된 셀 정보 세팅해주기
+		if(GetPlaceableObjectBase()->GetObjectDynamicData()->HasData)
 		{
-			SetOccupancyData(cells, true);
-			SetObjectData(cells, GetPlaceableObjectBase());
+			TArray<FIntPoint> GetOccupiedCells = GetCellsinRectangularArea(FVector(GetPlaceableObjectBase()->GetOccupiedCenterCell().X,GetPlaceableObjectBase()->GetOccupiedCenterCell().Y,100.0f), GetPlaceableObjectBase()->GetObjectSize());
+			for (FIntPoint cells : GetOccupiedCells)
+			{
+				SetOccupancyData(cells, true);
+				SetObjectData(cells, GetPlaceableObjectBase());
+			}
 		}
-	}
-	else // Editor 상에서 진행한 경우
-	{
-		TArray<FIntPoint> GetOccupiedCells = GetCellsinRectangularArea(GetPlaceableObjectBase()->GetActorLocation(), GetPlaceableObjectBase()->GetObjectSize());
-		for (FIntPoint cells : GetOccupiedCells)
+		else // Editor 상에서 진행한 경우
 		{
-			SetOccupancyData(cells, true);
-			SetObjectData(cells, GetPlaceableObjectBase());
+			TArray<FIntPoint> GetOccupiedCells = GetCellsinRectangularArea(GetPlaceableObjectBase()->GetActorLocation(), GetPlaceableObjectBase()->GetObjectSize());
+			for (FIntPoint cells : GetOccupiedCells)
+			{
+				SetOccupancyData(cells, true);
+				SetObjectData(cells, GetPlaceableObjectBase());
+			}
 		}
+		// Binding
+		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
 	}
+	
 }
 
 
@@ -53,16 +70,60 @@ void ABuildManager::BuildPlaceableObject()
 void ABuildManager::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if(Collection)
+	{
+		if(GetWorld())
+		{
+			SetPCI(GetWorld()->GetParameterCollectionInstance(Collection));
+			UE_LOG(LogTemp, Warning, TEXT("Set ParameterCollection Instance "));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("GetWorld is NULL"));
+		}
+	}
+	
 	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	
-	
 }
+
+
 
 void ABuildManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	// Delegate Delete
-	UpdateResourceAmountEvent.Unbind();
+}
+
+void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectBase, bool IsRemove)
+{
+	if(IsRemove && GetPlaceableObjectUnderCursor() == InPlaceableObjectBase) // Cursor End Overlap 에서 객체 취소
+	{
+		SetPlaceableObjectUnderCursor(nullptr);
+	}
+	else // Cursor Begin Overlap
+	{
+		SetPlaceableObjectUnderCursor(InPlaceableObjectBase);
+		if(IsValid(GetPlaceableObjectUnderCursor()))
+		{
+			// Demolition이 가능한지 판단
+			if(GetbDemolitionToolEnabled())
+			{
+				LSetOutlineColor(1);
+				if(IsValid(GetPCI()))
+				{
+					GetPCI()->SetScalarParameterValue(FName("EnableShading"), 1.0f);
+				}
+			}
+			else
+			{
+				LSetOutlineColor(GetPlaceableObjectUnderCursor()->GetObjectSide());
+				if(IsValid(GetPCI()))
+				{
+					GetPCI()->SetScalarParameterValue(FName("EnableShading"), 1.0f);
+				}
+			}
+		}
+	}
 }
 
 // Called every frame
@@ -71,6 +132,8 @@ void ABuildManager::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+
+
 void ABuildManager::SetGridOffsetFromGround(float Offset)
 {
 	GridOffsetFromGround = Offset;
@@ -92,7 +155,7 @@ void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoin
 	InstancedStaticMeshComponent->ClearInstances();
 
 	// Find the bottom left corner of our grid and Center grid, to start spawning tiles from there.
-	CalculateCenterandBottomLeft();
+	LCalculateCenterandBottomLeft();
 
 	for (int Index = 0; Index <= round(GridTileCount.X) - 1; Index++)
 	{
@@ -107,145 +170,40 @@ void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoin
 			// Mesh Size
 			FVector TileTransformScale = GridTileSize / FVector(100.0f, 100.0f, 100.0f);
 
-			// If Use Environment
-			if (UseEnvironment)
-			{
-				//Trace for Ground
-				if(TraceforGround(TileTransformLocation))
-				{
-					FTransform TileTransform;
-					TileTransform.SetLocation(TileTransformLocation);
-					TileTransform.SetScale3D(TileTransformScale);
-					// Add Instanced Static Mesh
-					int32 InstanceIndex = InstancedStaticMeshComponent->AddInstance(TileTransform, true);
-					if (IsTileMap == true)
-					{
-						bool isRColor = FMath::RandBool();
-						float ReturnRValue = isRColor ? 1.0f : 0.0f;
-						// SetCustomDataValue - R Parameter
-						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, ReturnRValue);
-						// Get a random element from the array
-						TArray<float> FloatArray = { 0.5f, 1.0f };
-						float RandomElement = FloatArray[FMath::RandRange(0, FloatArray.Num() - 1)];
-						float ReturnGValue = isRColor ? RandomElement : 1.0f;
-						// SetCustomDataValue - G Parameter
-						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 1, ReturnGValue);
-						// SetCustomDataValue - B Parameter
-						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 2, 0.0f);
-					}
-				}
-				
-			}
-			else
-			{
-				FTransform TileTransform;
-				TileTransform.SetLocation(TileTransformLocation);
-				TileTransform.SetScale3D(TileTransformScale);
-				// Add Instanced Static Mesh
-				int32 InstanceIndex = InstancedStaticMeshComponent->AddInstance(TileTransform, true);
-				if (IsTileMap == true)
-				{
-					bool isRColor = FMath::RandBool();
-					float ReturnRValue = isRColor ? 1.0f : 0.0f;
-					// SetCustomDataValue - R Parameter
-					InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, ReturnRValue);
-					// Get a random element from the array
-					TArray<float> FloatArray = { 0.5f, 1.0f };
-					float RandomElement = FloatArray[FMath::RandRange(0, FloatArray.Num() - 1)];
-					float ReturnGValue = isRColor ? RandomElement : 1.0f;
-					// SetCustomDataValue - G Parameter
-					InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 1, ReturnGValue);
-					// SetCustomDataValue - B Parameter
-					InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 2, 0.0f);
-				}
-			}
+			FTransform TileTransform;
+			TileTransform.SetLocation(TileTransformLocation);
+			TileTransform.SetScale3D(TileTransformScale);
+			// Add Instanced Static Mesh
+			int32 InstanceIndex = InstancedStaticMeshComponent->AddInstance(TileTransform, true);
 			
+			bool isRColor = FMath::RandBool();
+			float ReturnRValue = isRColor ? 1.0f : 0.0f;
+			// SetCustomDataValue - R Parameter
+			InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, ReturnRValue);
+			// Get a random element from the array
+			TArray<float> FloatArray = { 0.5f, 1.0f };
+			float RandomElement = FloatArray[FMath::RandRange(0, FloatArray.Num() - 1)];
+			float ReturnGValue = isRColor ? RandomElement : 1.0f;
+			// SetCustomDataValue - G Parameter
+			InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 1, ReturnGValue);
+			// SetCustomDataValue - B Parameter
+			InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 2, 0.0f);
 		}
 	}
 }
 
-FVector ABuildManager::SnapVectorToVector(FVector CurrentPosition, FVector SnapValue)
-{
-
-	FVector Return;
-	Return.X = FMath::RoundToInt32(CurrentPosition.X / SnapValue.X)* SnapValue.X;
-	Return.Y = FMath::RoundToInt32(CurrentPosition.Y / SnapValue.Y) * SnapValue.Y;
-	Return.Z = FMath::RoundToInt32(CurrentPosition.Z / SnapValue.Z) * SnapValue.Z;
-
-
-	return Return;
-}
-
-float ABuildManager::SnapFlaotToFloat(float CurrentLocation, float GridSize)
-{
-	float Return = FMath::RoundToInt32(CurrentLocation / GridSize) * GridSize;
-
-	return Return;
-
-}
-
-
-void ABuildManager::CalculateCenterandBottomLeft()
-{
-	FVector NewVector = SnapVectorToVector(GridCenterLocation, GridTileSize);
-	FIntPoint AlignVector;
-
-	AlignVector.X = static_cast<float>(FMath::Fmod(GridTileCount.X, 2)) == 0.0f ? 0.0f : 1.0f;
-	AlignVector.Y = static_cast<float>(FMath::Fmod(GridTileCount.Y, 2)) == 0.0f ? 0.0f : 1.0f;
-
-	FIntPoint Divided = (GridTileCount - AlignVector) / 2;
-	FVector GridCount = FVector(Divided.X * GridTileSize.X, Divided.Y * GridTileSize.Y, 1.0f);
-	
-	SetGridCenterLocation(NewVector);
-	SetGridBottomLeftCornerLocation(NewVector - GridCount);
-	
-}
-
-bool ABuildManager::TraceforGround(FVector& Location)
-{
-	FVector StartLocation = FVector(Location.X + 0.0f, Location.Y + 0.0f, Location.Z + 1000.0f);
-	FVector EndLocation = FVector(Location.X + 0.0f, Location.Y + 0.0f, Location.Z - 1000.0f);
-	float Radius = GridTileSize.X / 3.0f;
-	FCollisionQueryParams Params(NAME_None, false);
-	TArray<FHitResult> HitResults;
-	TArray<AActor*> ActorsToIgnore;
-
-	bool IsHitResult = UKismetSystemLibrary::SphereTraceMulti(
-		GetWorld(),
-		StartLocation,
-		EndLocation,
-		Radius,
-		UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel2),
-		false,
-		ActorsToIgnore,
-		EDrawDebugTrace::None,
-		HitResults,
-		true,
-		FLinearColor::Red,
-		FLinearColor::Green,
-		5.0f);
-
-
-	if (HitResults.Num() > 0)
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s"), *HitResults[0].Location.ToString());
-		Location.Z = SnapFlaotToFloat(HitResults[0].Location.Z, GridTileSize.Z) - 20.0f;
-		return true;
-	}
-	return false;
-}
 
 
 void ABuildManager::PressedLMB()
 {
-	SetInteractStarted(true);
+	SetbInteractStarted(true);
 	SelectPlaceableObject();
 
 }
 
 void ABuildManager::SelectPlaceableObject()
 {
-	if (GetBuildToolEnabled() == false) 
+	if (GetbBuildToolEnabled() == false) 
 	{
 		// 1. Placeable Object 아래에 커서가 존재할 경우
 		if(IsValid(GetPlaceableObjectUnderCursor()))
@@ -260,14 +218,14 @@ void ABuildManager::SelectPlaceableObject()
 				}
 			}
 			SetSelectedPlaceableObject(PlaceableObjectUnderCursor);
-			SetPlaceableObjectSelected(true);
+			SetbPlaceableObjectSelected(true);
 			//todo: Set Object Seletectd State
 		}
 		// 2. Placeable Object 아래에 커서가 존재하지 않는 경우
 		else
 		{
 			// Placeable Object가 존재하는지?
-			SetPlaceableObjectSelected(false);
+			SetbPlaceableObjectSelected(false);
 			if (IsValid(GetSelectedPlaceableObject()))
 			{
 				//todo: Set Object Seletectd State
@@ -275,6 +233,7 @@ void ABuildManager::SelectPlaceableObject()
 		}
 	}
 }
+
 
 TArray<FIntPoint> ABuildManager::GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount)
 {
@@ -379,13 +338,73 @@ void ABuildManager::UpdateResouresValue(FConstructionCost Resource, bool Add, bo
 
 		SetPlayerResources(Construction);
 	}
+	/*
 	// Call Event Delegate
 	if(UpdateResourceAmountEvent.IsBound())
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Execute")));
 		UpdateResourceAmountEvent.Execute(GetPlayerResources());
 	}
+	*/
+}
+
+/*
+ * Local Function
+ */
+
+FVector ABuildManager::LSnapVectorToVector(FVector CurrentPosition, FVector SnapValue)
+{
+
+	FVector Return;
+	Return.X = FMath::RoundToInt32(CurrentPosition.X / SnapValue.X)* SnapValue.X;
+	Return.Y = FMath::RoundToInt32(CurrentPosition.Y / SnapValue.Y) * SnapValue.Y;
+	Return.Z = FMath::RoundToInt32(CurrentPosition.Z / SnapValue.Z) * SnapValue.Z;
+
+
+	return Return;
+}
+
+float ABuildManager::LSnapFlaotToFloat(float CurrentLocation, float GridSize)
+{
+	float Return = FMath::RoundToInt32(CurrentLocation / GridSize) * GridSize;
+
+	return Return;
+
+}
+
+
+void ABuildManager::LCalculateCenterandBottomLeft()
+{
+	FVector NewVector = LSnapVectorToVector(GridCenterLocation, GridTileSize);
+	FIntPoint AlignVector;
+
+	AlignVector.X = static_cast<float>(FMath::Fmod(GridTileCount.X, 2)) == 0.0f ? 0.0f : 1.0f;
+	AlignVector.Y = static_cast<float>(FMath::Fmod(GridTileCount.Y, 2)) == 0.0f ? 0.0f : 1.0f;
+
+	FIntPoint Divided = (GridTileCount - AlignVector) / 2;
+	FVector GridCount = FVector(Divided.X * GridTileSize.X, Divided.Y * GridTileSize.Y, 1.0f);
 	
+	SetGridCenterLocation(NewVector);
+	SetGridBottomLeftCornerLocation(NewVector - GridCount);
+	
+}
+
+void ABuildManager::LSetOutlineColor(int32 ObjectSide)
+{
+	if(IsValid(GetPCI()))
+	{
+		switch (ObjectSide)
+		{
+		case 0:
+			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), PlayerOutlineColor);
+		case 1:
+			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), EnemyOutlineColor);
+		case 2:
+			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), NeturalOutlineColor);
+		default:
+			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), NeturalOutlineColor);
+		}
+	}
 }
 
 
