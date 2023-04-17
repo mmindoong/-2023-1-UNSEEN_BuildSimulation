@@ -8,7 +8,14 @@
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 
-
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   ABuildManager
+  
+  @Summary:  Constructor
+  
+  @Modifies: [InstancedStaticMeshComponent, StaticMeshComponent,
+             GridCenterLocation, Collection].
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 // Sets default values
 ABuildManager::ABuildManager()
 {
@@ -27,7 +34,14 @@ ABuildManager::ABuildManager()
 	
 }
 
-/* 현재는 bp에서 키인풋으로 호출하도록 구현 -> Placer에서 판단 후 호출하도록 수정 */
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   BuildPlaceableObject
+  
+  @Summary:  Spawn PlaceableObject Actor, Set new data
+  
+  @Modifies: [PlaceableObjectBase, OccupancyData, ObjectData]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+//todo: 현재는 bp에서 키인풋으로 호출하도록 구현 -> Placer에서 판단 후 호출하도록 수정 
 void ABuildManager::BuildPlaceableObject()
 {
 	FVector SpawnLocation = GetActorLocation(); //todo : Spawn 위치를 Cell Under Cursor로 변경
@@ -52,6 +66,7 @@ void ABuildManager::BuildPlaceableObject()
 		}
 		else // Editor 상에서 진행한 경우
 		{
+			GetPlaceableObjectBase()->SetOccupiedCenterCell(FIntPoint(GetActorLocation().X, GetActorLocation().Y));
 			TArray<FIntPoint> GetOccupiedCells = GetCellsinRectangularArea(GetPlaceableObjectBase()->GetActorLocation(), GetPlaceableObjectBase()->GetObjectSize());
 			for (FIntPoint cells : GetOccupiedCells)
 			{
@@ -59,14 +74,19 @@ void ABuildManager::BuildPlaceableObject()
 				SetObjectData(cells, GetPlaceableObjectBase());
 			}
 		}
-		// Binding
+		// Binding event when PlaceableObject construct
 		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
 	}
 	
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   BeginPlay
+  
+  @Summary:  Called when the game starts or when spawned
 
-// Called when the game starts or when spawned
+  @Modifies: [PCI, PlayerController]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::BeginPlay()
 {
 	Super::BeginPlay();
@@ -88,12 +108,27 @@ void ABuildManager::BeginPlay()
 }
 
 
-
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   EndPlay
+  
+  @Summary:  Called when the game ends
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 }
 
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   CallUpdatePlaceableObjectUnderCursor
+  
+  @Summary:  Callback function when Object's Mouse Cursor event occured
+  
+  @Args:     APlaceableObjectBase* InPlaceableObjectBase, bool IsRemove
+             Get Object's pointer, bool whether begin or end
+  
+  @Modifies: [PlaceableObjectUnderCursor, PCI]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectBase, bool IsRemove)
 {
 	if(IsRemove && GetPlaceableObjectUnderCursor() == InPlaceableObjectBase) // Cursor End Overlap 에서 객체 취소
@@ -126,22 +161,32 @@ void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* I
 	}
 }
 
-// Called every frame
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   Tick
+  
+  @Summary:  Called every frame
+  
+  @Args:     float DeltaTime
+			 Delta Seconds between frames
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   SpawnGrid
+  
+  @Summary:  Spawn Tile Map with Instanced static mesh
+  
+  @Args:     FVector CenterLocation, FVector TileSize, FIntPoint TileCount
+              Tile Map's Center Location, Size, Count
 
-void ABuildManager::SetGridOffsetFromGround(float Offset)
-{
-	GridOffsetFromGround = Offset;
-	InstancedStaticMeshComponent->SetWorldLocation(FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + GridOffsetFromGround));
-}
-
-
-void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount, bool UseEnvironment)
+  @Modifies: [GridCenterLocation, GridTileSize, GridTileCount,
+              InstancedStaticMeshComponent]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount)
 {
 	// Save the variables for later. We'll need them as long as the grid is alive.
 	SetGridCenterLocation(CenterLocation);
@@ -193,7 +238,11 @@ void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoin
 }
 
 
-
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   PressedLMB
+  
+  @Summary:  Left Сlick to build and select objects
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::PressedLMB()
 {
 	SetbInteractStarted(true);
@@ -201,6 +250,13 @@ void ABuildManager::PressedLMB()
 
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   SelectPlaceableObject
+  
+  @Summary:  process UnderCursor object to Select object when PressedLMB
+  
+  @Modifies: [SelectedPlaceableObject, bPlaceableObjectSelected]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::SelectPlaceableObject()
 {
 	if (GetbBuildToolEnabled() == false) 
@@ -234,13 +290,18 @@ void ABuildManager::SelectPlaceableObject()
 	}
 }
 
-
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   GetCellsinRectangularArea
+  
+  @Summary:  Get Cells by the size of PlaceableObject's Objectsize.
+  
+  @Args:     FVector CenterLocation, FIntPoint TileCount
+             Object's OccupiedCenterCell, Object's count
+  
+  @Returns:  TArray<FIntPoint>
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 TArray<FIntPoint> ABuildManager::GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount)
 {
-	// 설정한 CenterLocation, Tilecount로 Bottom Left Corner 계산
-	SetGridCenterLocation(CenterLocation);
-	SetGridTileCount(TileCount);
-
 	int CurrentCellX = 0;
 	int CurrentCellY = 0;
 	TArray<FIntPoint> Cells;
@@ -253,10 +314,18 @@ TArray<FIntPoint> ABuildManager::GetCellsinRectangularArea(FVector CenterLocatio
 			Cells.Add(FIntPoint(CurrentCellX, CurrentCellY));
 		}
 	}
-	SpawnGrid(CenterLocation, GetGridTileSize(), TileCount);
 	return Cells;
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   SetOccupancyData
+  
+  @Summary:  Set constructed Object's occupied cell data into BuildManager's OccupancyData
+  
+  @Args:     FIntPoint Cell, bool IsOccupied
+  
+  @Modifies: [OccupancyData]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::SetOccupancyData(FIntPoint Cell, bool IsOccupied)
 {	
 	if (IsOccupied)
@@ -286,13 +355,31 @@ void ABuildManager::SetOccupancyData(FIntPoint Cell, bool IsOccupied)
 	}
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   SetOccupancyData
+  
+  @Summary:  Set constructed Object's data into BuildManager's ObjectData
+  
+  @Args:     FIntPoint Cell, APlaceableObjectBase* PlaceableObject
+  
+  @Modifies: [OccupancyData]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::SetObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject)
 {
 	// If the Data already exists, it will be overwritten.
 	GetObjectData().Add(Cell, PlaceableObject);
 }
 
-void ABuildManager::UpdateResouresValue(FConstructionCost Resource, bool Add, bool Subtract)
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   UpdateResourcesValue
+  
+  @Summary:  Updates ResourcesValue when Object is Constructed/Demolitioned
+  
+  @Args:     FConstructionCost Resource, bool Add, bool Subtract
+  
+  @Modifies: [PlayerResources]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, bool Subtract)
 {
 	if(Add)
 	{
@@ -348,22 +435,35 @@ void ABuildManager::UpdateResouresValue(FConstructionCost Resource, bool Add, bo
 	*/
 }
 
-/*
- * Local Function
- */
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   LSnapVectorToVector
+  
+  @Summary:  Local Funtion for Sanp Vector to Vector
+  
+  @Args:     FVector CurrentPosition, FVector SnapValue
+  
+  @Returns:  FVector
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 FVector ABuildManager::LSnapVectorToVector(FVector CurrentPosition, FVector SnapValue)
 {
-
 	FVector Return;
 	Return.X = FMath::RoundToInt32(CurrentPosition.X / SnapValue.X)* SnapValue.X;
 	Return.Y = FMath::RoundToInt32(CurrentPosition.Y / SnapValue.Y) * SnapValue.Y;
 	Return.Z = FMath::RoundToInt32(CurrentPosition.Z / SnapValue.Z) * SnapValue.Z;
-
-
+	
 	return Return;
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   LSnapFlaotToFloat
+  
+  @Summary:  Local Funtion for Sanp Float to Float
+  
+  @Args:     float CurrentPosition, float SnapValue
+  
+  @Returns:  float
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 float ABuildManager::LSnapFlaotToFloat(float CurrentLocation, float GridSize)
 {
 	float Return = FMath::RoundToInt32(CurrentLocation / GridSize) * GridSize;
@@ -372,7 +472,15 @@ float ABuildManager::LSnapFlaotToFloat(float CurrentLocation, float GridSize)
 
 }
 
-
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   LCalculateCenterandBottomLeft
+  
+  @Summary:  Local Funtion for Calculate BottomLeftCorner using Center Location
+  
+  @Args:     float CurrentPosition, float SnapValue
+  
+  @Modifies: [GridCenterLocation, GridBottomLeftCornerLocation]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::LCalculateCenterandBottomLeft()
 {
 	FVector NewVector = LSnapVectorToVector(GridCenterLocation, GridTileSize);
@@ -389,6 +497,14 @@ void ABuildManager::LCalculateCenterandBottomLeft()
 	
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   LSetOutlineColor
+  
+  @Summary:  Local Function for set Material Collection Parameter to set outline color
+  
+  @Args:     int32 ObjectSide
+             PlaceableObject's Outline Color determining demolition
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::LSetOutlineColor(int32 ObjectSide)
 {
 	if(IsValid(GetPCI()))

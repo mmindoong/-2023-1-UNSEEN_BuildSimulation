@@ -31,7 +31,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	void SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount, bool UseEnvironment=false);
+	void SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount);
 
 	UFUNCTION(BlueprintCallable, Category = "Cell")
 	TArray<FIntPoint> GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount);
@@ -64,10 +64,7 @@ protected:
 	UStaticMeshComponent* StaticMeshComponent;
 	
 	UFUNCTION(BlueprintCallable, Category = "Main")
-	void UpdateResouresValue(FConstructionCost Resource, bool Add, bool Subtract);
-
-	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	void SetGridOffsetFromGround(float Offset);
+	void UpdateResourcesValue(FConstructionCost Resource, bool Add, bool Subtract);
 
 	UFUNCTION(BlueprintCallable, Category = "Main")
 	void PressedLMB();

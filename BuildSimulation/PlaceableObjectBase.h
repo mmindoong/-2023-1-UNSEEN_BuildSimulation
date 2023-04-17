@@ -54,7 +54,7 @@ public:
 	void SetupOutline();
 	
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
-	void EnableObjectHighlighting(bool IsEnable);
+	void SwapObjectHighlighting(bool IsEnable);
 	
 	
 	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
@@ -71,7 +71,7 @@ public:
 
 private:
 	/* Local Function Library */
-	void LEnableObjectOutline(bool IsEnable);
+	void LSwapObjectOutline(bool IsEnable);
 	
 	FPlaceableObjectData* ObjectData;
 	FDynamicPlaceableObjectData Data = FDynamicPlaceableObjectData();
