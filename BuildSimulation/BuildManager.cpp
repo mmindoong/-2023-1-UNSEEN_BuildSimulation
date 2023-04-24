@@ -4,6 +4,7 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/PostProcessVolume.h"
 #include "Kismet/KismetMaterialLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
@@ -28,6 +29,7 @@ ABuildManager::ABuildManager()
 
 	SetGridCenterLocation(GetActorLocation());
 	//SpawnGrid(GridCenterLocation, GridTileSize, GridTileCount);
+	
 	// Outline Material Asset Load
 	FString AssetPath = TEXT("/Game/GridBasedBuilder/Materials/Outline/MPC_OutlineCollection");
 	Collection = LoadObject<UMaterialParameterCollection>(nullptr, *AssetPath);
@@ -35,10 +37,104 @@ ABuildManager::ABuildManager()
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   BeginPlay
+  
+  @Summary:  Called when the game starts or when spawned
+
+  @Modifies: [PCI, PlayerController]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::BeginPlay()
+{
+	Super::BeginPlay();
+	if(Collection)
+	{
+		if(GetWorld())
+		{
+			SetPCI(GetWorld()->GetParameterCollectionInstance(Collection));
+			UE_LOG(LogTemp, Warning, TEXT("Set ParameterCollection Instance "));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("GetWorld is NULL"));
+		}
+	}
+	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	UpdateResourcesValue(FConstructionCost(2000, FFoodData(100,100,100), 100, 100, 100, 100), false, false);
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   Tick
+  
+  @Summary:  Called every frame
+  
+  @Args:     float DeltaTime
+			 Delta Seconds between frames
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   EndPlay
+  
+  @Summary:  Called when the game ends
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	FUpdateResourceAmountEvent.Unbind();
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   CallUpdatePlaceableObjectUnderCursor
+
+  @Category: Event Dispatcher
+  
+  @Summary:  Callback function when Object's Mouse Cursor event occured
+  
+  @Args:     APlaceableObjectBase* InPlaceableObjectBase, bool IsRemove
+			 Get Object's pointer, bool whether begin or end
+  
+  @Modifies: [PlaceableObjectUnderCursor, PCI]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectBase, bool IsRemove)
+{
+	if(IsRemove && GetPlaceableObjectUnderCursor() == InPlaceableObjectBase) // Cursor End Overlap 에서 객체 취소
+	{
+		SetPlaceableObjectUnderCursor(nullptr);
+	}
+	else // Cursor Begin Overlap
+	{
+		SetPlaceableObjectUnderCursor(InPlaceableObjectBase);
+		if(IsValid(GetPlaceableObjectUnderCursor()))
+		{
+			// Demolition이 가능한지 판단
+			if(GetbDemolitionToolEnabled())
+			{
+				LSetOutlineColor(1);
+				if(IsValid(GetPCI()))
+					GetPCI()->SetScalarParameterValue(FName("EnableShading"), 1.0f);
+			}
+			else
+			{
+				LSetOutlineColor(GetPlaceableObjectUnderCursor()->GetObjectSide());
+				if(IsValid(GetPCI()))
+					GetPCI()->SetScalarParameterValue(FName("EnableShading"), 1.0f);
+			}
+		}
+	}
+}
+
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   BuildPlaceableObject
+
+  @Category: Main
   
   @Summary:  Spawn PlaceableObject Actor, Set new data
-  
+
   @Modifies: [PlaceableObjectBase, OccupancyData, ObjectData]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 //todo: 현재는 bp에서 키인풋으로 호출하도록 구현 -> Placer에서 판단 후 호출하도록 수정 
@@ -77,106 +173,230 @@ void ABuildManager::BuildPlaceableObject()
 		// Binding event when PlaceableObject construct
 		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
 	}
-	
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   BeginPlay
-  
-  @Summary:  Called when the game starts or when spawned
 
-  @Modifies: [PCI, PlayerController]
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   PressedLMB
+  
+  @Category: Main
+ 
+  @Summary:  Left Сlick to select objects under Cursor
+
+  @Modifies: [bInteractStarted, bDragWasInterrupted,
+             StartLocationUnderCursor]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::BeginPlay()
+void ABuildManager::PressedLMB()
 {
-	Super::BeginPlay();
-	
-	if(Collection)
+	SetbInteractStarted(true);
+	SelectPlaceableObject();
+	if(GetbObjectForPlacementIsSelected())
 	{
-		if(GetWorld())
+		SetbDragWasInterrupted(false);
+		FHitResult ResultCamera;
+		if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery2, bTraceComplex, ResultCamera))
 		{
-			SetPCI(GetWorld()->GetParameterCollectionInstance(Collection));
-			UE_LOG(LogTemp, Warning, TEXT("Set ParameterCollection Instance "));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("GetWorld is NULL"));
+			if(ResultCamera.bBlockingHit)
+				SetStartLocationUnderCursor(ResultCamera.Location);
 		}
 	}
-	
-	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 }
 
-
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   EndPlay
+  @Method:   ReleasedLMB
   
-  @Summary:  Called when the game ends
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-}
+  @Category: Main
+ 
+  @Summary:  Build Object when released
 
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   CallUpdatePlaceableObjectUnderCursor
-  
-  @Summary:  Callback function when Object's Mouse Cursor event occured
-  
-  @Args:     APlaceableObjectBase* InPlaceableObjectBase, bool IsRemove
-             Get Object's pointer, bool whether begin or end
-  
-  @Modifies: [PlaceableObjectUnderCursor, PCI]
+  @Modifies: [bInteractStarted, bDragWasInterrupted,
+			 bDragStarted]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectBase, bool IsRemove)
+void ABuildManager::ReleasedLMB()
 {
-	if(IsRemove && GetPlaceableObjectUnderCursor() == InPlaceableObjectBase) // Cursor End Overlap 에서 객체 취소
+	if(GetbInteractStarted())
 	{
-		SetPlaceableObjectUnderCursor(nullptr);
+		if(GetbBuildToolEnabled() && GetbObjectForPlacementIsSelected())
+		{
+			if(IsValid(GetActivePlacer()))
+			{
+				if(LCheckifEnoughResources(GetActivePlacer()->GetObjectData()->ConstructionCost))
+				{
+					GetActivePlacer()->BuildObject();
+				}
+			}
+		}
+		SetbInteractStarted(false);
+		SetbDragStarted(false);
+		SetbDragWasInterrupted(false);
 	}
-	else // Cursor Begin Overlap
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   UpdateBuildingManagerValues
+  
+  @Category: Main
+  
+  @Summary:  This function updates the values under the cursor every tick
+
+  @Modifies: [LocationUnderCursorVisibility, LocationUnderCursorCamera,
+             LastCellUnderCursor, CellUnderCursor, bCellUnderCursorHasChanged]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::UpdateBuildingManagerValues()
+{
+	//By default, two channels are checked, camera and visibility
+	FHitResult ResultVisiblity;
+	if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery1, bTraceComplex, ResultVisiblity))
 	{
-		SetPlaceableObjectUnderCursor(InPlaceableObjectBase);
+		if(ResultVisiblity.bBlockingHit)
+		{
+			SetLocationUnderCursorVisibility(ResultVisiblity.Location);
+			SetActorUnderCursor(ResultVisiblity.GetActor());
+		}
+	}
+	FHitResult ResultCamera;
+	if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery2, bTraceComplex, ResultCamera))
+	{
+		if(ResultCamera.bBlockingHit)
+		{
+			SetLocationUnderCursorCamera(ResultCamera.Location);
+		}
+	}
+
+	//Checking if the cursor has moved to a new grid cell
+	//This is necessary for optimization, checking the area for building a building is done once when the cell under the cursor is changed
+	if( GetCellUnderCursor() != GetLastCellUnderCursor())
+	{
+		SetLastCellUnderCursor(GetCellUnderCursor());
+		SetbCellUnderCursorHasChanged(true);
+	}
+	else
+		SetbCellUnderCursorHasChanged(false);
+
+	FIntPoint Cell= LGetCellfromWorldLocation(GetLocationUnderCursorCamera());
+	SetCellUnderCursor(Cell);
+}
+
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   SelectPlaceableObject
+
+  @Category: Main
+  
+  @Summary:  Process UnderCursor object to Select object when PressedLMB
+             & Object's SelectedMode Activate
+  
+  @Modifies: [SelectedPlaceableObject, bPlaceableObjectSelected]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::SelectPlaceableObject()
+{
+	if (GetbBuildToolEnabled() == false) 
+	{
+		// 1. Placeable Object 아래에 커서가 존재할 경우
 		if(IsValid(GetPlaceableObjectUnderCursor()))
 		{
-			// Demolition이 가능한지 판단
-			if(GetbDemolitionToolEnabled())
+			// 1-1. Placeable Object 객체가 기존에 선택된것인지 체크->오브젝트 상태변경
+			if (IsValid(GetSelectedPlaceableObject()))
 			{
-				LSetOutlineColor(1);
-				if(IsValid(GetPCI()))
-				{
-					GetPCI()->SetScalarParameterValue(FName("EnableShading"), 1.0f);
-				}
+				if (GetPlaceableObjectUnderCursor() != GetSelectedPlaceableObject())
+					GetSelectedPlaceableObject()->SetObjectSelectedMode(false); // 기존에 선택된 Object는 비워줌.
 			}
-			else
+			SetSelectedPlaceableObject(PlaceableObjectUnderCursor); // 커서 아래있는 오브젝트가 현재 선택된 오브젝트로 변경
+			SetbPlaceableObjectSelected(true);
+			GetSelectedPlaceableObject()->SetObjectSelectedMode(true);
+		}
+		// 2. Placeable Object 아래에 커서가 존재하지 않는 경우
+		else
+		{
+			SetbPlaceableObjectSelected(false); // 선택된 상태가 아닌 것으로 판단
+			if (IsValid(GetSelectedPlaceableObject())) 
 			{
-				LSetOutlineColor(GetPlaceableObjectUnderCursor()->GetObjectSide());
-				if(IsValid(GetPCI()))
-				{
-					GetPCI()->SetScalarParameterValue(FName("EnableShading"), 1.0f);
-				}
+				GetSelectedPlaceableObject()->SetObjectSelectedMode(false);
+				SetSelectedPlaceableObject(nullptr);
 			}
 		}
 	}
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   Tick
-  
-  @Summary:  Called every frame
-  
-  @Args:     float DeltaTime
-			 Delta Seconds between frames
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::Tick(float DeltaTime)
+void ABuildManager::DeselectPlaceableObject()
 {
-	Super::Tick(DeltaTime);
+	if(GetbPlaceableObjectSelected() && IsValid(GetSelectedPlaceableObject()))
+	{
+		GetSelectedPlaceableObject()->SetObjectSelectedMode(false);
+		SetbPlaceableObjectSelected(false);
+		if(GetPlaceableObjectUnderCursor() == GetSelectedPlaceableObject())
+		{
+			GetSelectedPlaceableObject()->SwapObjectHighlighting(true);
+		}
+		SetSelectedPlaceableObject(nullptr);
+	}
+}
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   CancelDragObjectPlacing
+  
+  @Category: Main
+  
+  @Summary:  Detect Cancel Drag and Hide activated Placer Actor
+
+  @Modifies: [bDragWasInterrupted]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::CancelDragObjectPlacing()
+{
+	if(GetbInteractStarted())
+	{
+		SetbDragWasInterrupted(true); // Drag Cancel Detect
+		if(IsValid(GetActivePlacer()))
+		{
+			GetActivePlacer()->HidePlaceIndicators();
+		}
+	}
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   DetectMouseDrag
+  
+  @Category: Main
+  
+  @Summary:  Set bool DragStart Variable
+
+  @Modifies: [bDragStarted]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::DetectMouseDrag()
+{
+	if(IsValid(GetActivePlacer()))
+	{
+		// Placer가 드래그가능한 상태, BuildManager는 Interact 시작이면서 Drag는 안한 상태
+		if(GetActivePlacer()->GetbCanbeDraggged() && GetbInteractStarted() && GetbDragStarted()==false)
+		{
+			float Squared = UKismetMathLibrary::VSize2DSquared(static_cast<FVector2d>(GetStartLocationUnderCursor()-GetLocationUnderCursorCamera()));
+			if(Squared > GetStartDragInstance()* GetStartDragInstance())
+				SetbDragStarted(true);
+		}
+	}
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   RotateObject
+  
+  @Category: Main
+  
+  @Summary:  do ActivePlacer's Rotation
+  
+  @Args:     bool bLeft
+             if rotation is left
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::RotateObject(bool bLeft)
+{
+	if(GetbBuildToolEnabled())
+		GetActivePlacer()->RotateObjectPlacer(true);
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SpawnGrid
+
+  @Category: GridSystem
   
   @Summary:  Spawn Tile Map with Instanced static mesh
   
@@ -237,61 +457,10 @@ void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoin
 	}
 }
 
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   PressedLMB
-  
-  @Summary:  Left Сlick to build and select objects
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::PressedLMB()
-{
-	SetbInteractStarted(true);
-	SelectPlaceableObject();
-
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   SelectPlaceableObject
-  
-  @Summary:  process UnderCursor object to Select object when PressedLMB
-  
-  @Modifies: [SelectedPlaceableObject, bPlaceableObjectSelected]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::SelectPlaceableObject()
-{
-	if (GetbBuildToolEnabled() == false) 
-	{
-		// 1. Placeable Object 아래에 커서가 존재할 경우
-		if(IsValid(GetPlaceableObjectUnderCursor()))
-		{
-			// 1-1. Placeable Object 객체가 기존에 존재했는지 체크->오브젝트 상태변경
-			if (IsValid(GetSelectedPlaceableObject()))
-			{
-				if (GetPlaceableObjectUnderCursor() != GetSelectedPlaceableObject())
-				{
-					// todo: Set Object Seletectd State
-					
-				}
-			}
-			SetSelectedPlaceableObject(PlaceableObjectUnderCursor);
-			SetbPlaceableObjectSelected(true);
-			//todo: Set Object Seletectd State
-		}
-		// 2. Placeable Object 아래에 커서가 존재하지 않는 경우
-		else
-		{
-			// Placeable Object가 존재하는지?
-			SetbPlaceableObjectSelected(false);
-			if (IsValid(GetSelectedPlaceableObject()))
-			{
-				//todo: Set Object Seletectd State
-			}
-		}
-	}
-}
-
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   GetCellsinRectangularArea
+
+ @Category: GridSystem
   
   @Summary:  Get Cells by the size of PlaceableObject's Objectsize.
   
@@ -319,6 +488,8 @@ TArray<FIntPoint> ABuildManager::GetCellsinRectangularArea(FVector CenterLocatio
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SetOccupancyData
+
+  @Category: Data|Occupancy
   
   @Summary:  Set constructed Object's occupied cell data into BuildManager's OccupancyData
   
@@ -357,6 +528,8 @@ void ABuildManager::SetOccupancyData(FIntPoint Cell, bool IsOccupied)
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SetOccupancyData
+
+  @Category: Data|Occupancy
   
   @Summary:  Set constructed Object's data into BuildManager's ObjectData
   
@@ -371,7 +544,106 @@ void ABuildManager::SetObjectData(FIntPoint Cell, APlaceableObjectBase* Placeabl
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   ActivateBuildingTool
+
+  @Category: Tool
+  
+  @Summary:  Spawn Placer Actor and change to new activate Placer
+  
+  @Args:     FDataTableRowHandle ObjectforBuilding
+             the object's datarow for change
+  
+  @Modifies: [bBuildToolEnabled, 
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::ActivateBuildingTool(FDataTableRowHandle ObjectforBuilding)
+{
+	DeactivateBuildingTool();
+	LChangeObjectforPlacement(ObjectforBuilding);
+	if(GetbObjectForPlacementIsSelected())
+	{
+		SetbBuildToolEnabled(true);
+		if(IsValid(GetActivePlacer()))
+		{
+			GetActivePlacer()->DeactivateObjectPlacer();
+		}
+		UpdateBuildingManagerValues();
+		FVector SpawnLocation = GetLocationUnderCursorCamera();
+		FRotator rotator;
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		if(GetWorld())
+			 SetActivePlacer(Cast<APlacerObjectBase>(GetWorld()->SpawnActor<AActor>(PlacerObjectBaseClass, SpawnLocation, rotator, SpawnParams)));
+		GetActivePlacer()->ActivateObjectPlacer();
+	}
+	
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   DeactivateBuildingTool
+  
+  @Category: Tool
+  
+  @Summary:  Cancel Placing and Destroy current activated Placer Actor
+  
+  @Modifies: [bObjectForPlacementIsSelected, bBuildToolEnabled]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::DeactivateBuildingTool()
+{
+	if(GetbBuildToolEnabled())
+	{
+		if(GetbDragStarted()) // 이미 드래그중이었는지
+			CancelDragObjectPlacing();
+		else
+		{
+			SetbPlaceableObjectSelected(false);
+			SetbBuildToolEnabled(false);
+			if(IsValid(GetActivePlacer()))
+			{
+				GetActivePlacer()->DeactivateObjectPlacer();
+			}
+		}
+	}
+		
+	
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   ActivateDemolitionTool
+  
+  @Category: Tool
+  
+  @Summary:  Actiavte Dmeolitoin tool by Deactivate Building tool
+  
+  @Modifies: [bDemolitionToolEnabled]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::ActivateDemolitionTool()
+{
+	DeactivateBuildingTool();
+	SetbDemolitionToolEnabled(false);
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   DeactivateDemolitionTool
+  
+  @Category: Tool
+  
+  @Summary:  Deactiavte Dmeolitoin tool
+  
+  @Modifies: [bDemolitionToolEnabled]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::DeactivateDemolitionTool()
+{
+	if(GetbDemolitionToolEnabled()) //원래 활성화되어있었는지 확인
+	{
+		SetbDemolitionToolEnabled(true);
+		//CallUpdatePlaceableObjectUnderCursor(GetPlaceableObjectUnderCursor(), false); 
+	}
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   UpdateResourcesValue
+
+  @Category: Resource
   
   @Summary:  Updates ResourcesValue when Object is Constructed/Demolitioned
   
@@ -521,6 +793,71 @@ void ABuildManager::LSetOutlineColor(int32 ObjectSide)
 			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), NeturalOutlineColor);
 		}
 	}
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   LChangeObjectforPlacement
+  
+  @Summary:  Local Function for Changing Object Data using new DT Row
+  
+  @Args:     FDataTableRowHandle NewObjectRow
+  
+  @Modifies: [ObjectForPlacement, PlaceableObjectData,
+             bObjectForPlacementIsSelected]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::LChangeObjectforPlacement(FDataTableRowHandle NewObjectRow)
+{
+	SetObjectForPlacement(NewObjectRow);
+	if(GetObjectForPlacement().RowName != FName("None"))
+	{
+		FName LocalRowName = GetObjectForPlacement().RowName;
+		FPlaceableObjectData* OutRow = GetObjectForPlacement().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
+		if (OutRow != nullptr)
+		{
+			SetbObjectForPlacementIsSelected(true);
+			SetPlaceableObjectData(OutRow);
+		}
+		else
+			SetbObjectForPlacementIsSelected(false);
+	}
+	else
+		SetbObjectForPlacementIsSelected(false);
+}
+
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   LGetCellfromWorldLocation
+
+  @Summary:  Local Function for return grid cell from World Location
+  
+  @Args:     FVector Location
+			 The World location(Mouse Cursor) for getting cell
+  
+  @Returns:  FIntPoint
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+FIntPoint ABuildManager::LGetCellfromWorldLocation(FVector Location)
+{
+	int32 X = FMath::Abs(FMath::RoundToInt32(Location.X / GetGridTileSize().X)) * FMath::Sign(FMath::RoundToInt32(Location.X / GetGridTileSize().X));
+	int32 Y = FMath::Abs(FMath::RoundToInt32(Location.Y / GetGridTileSize().Y)) * FMath::Sign(FMath::RoundToInt32(Location.Y / GetGridTileSize().Y));
+	
+	return FIntPoint(X,Y);
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   LCheckifEnoughResources
+
+  @Summary:  Local Function for return Check Resource
+  
+  @Args:     FConstructionCost InCost
+			 The Cost need for Construction
+  
+  @Returns:  bool
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+bool ABuildManager::LCheckifEnoughResources(FConstructionCost InCost)
+{
+	return GetPlayerResources().Gold - InCost.Gold >= 0 && GetPlayerResources().Food.Fruit - InCost.Food.Fruit >=0 && GetPlayerResources().Food.Rice - InCost.Food.Rice >=0
+		&& GetPlayerResources().Food.Meat - InCost.Food.Meat >=0 && GetPlayerResources().Coal - InCost.Coal >= 0 && GetPlayerResources().Iron - InCost.Iron >= 0
+		&& GetPlayerResources().Rock - InCost.Rock >=0 && GetPlayerResources().Wood - InCost.Wood >=0;
 }
 
 

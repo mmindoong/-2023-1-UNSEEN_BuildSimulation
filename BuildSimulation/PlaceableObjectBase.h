@@ -22,16 +22,14 @@ class BUILDSIMULATION_API APlaceableObjectBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	APlaceableObjectBase();
-	
+
+	/* Delegate Instance */
 	FUpdatePlaceableObject UpdatePlaceableObjectCursorEvent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* SphereVisual;
-
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/* Event Function */
@@ -43,19 +41,25 @@ protected:
 
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	/* Parent Functions */
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void SetupPlaceableObject();
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void SetupOutline();
+
+	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
+	void SetObjectSelectedMode(bool IsSelected);
 	
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void SwapObjectHighlighting(bool IsEnable);
+
+	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
+	void DestroyPlaceableObject();
 	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* SphereVisual;
 	
 	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
 	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }

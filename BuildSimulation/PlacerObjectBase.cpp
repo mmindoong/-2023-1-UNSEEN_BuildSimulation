@@ -3,25 +3,211 @@
 
 #include "PlacerObjectBase.h"
 
-// Sets default values
+#include "BuildManager.h"
+#include "Kismet/GameplayStatics.h"
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   APlacerObjectBase
+  
+  @Category: Constructor
+  
+  @Summary:  Sets default values
+  
+  @Modifies: [PlaceableObjectTable, ObjectNameInTable]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 APlacerObjectBase::APlacerObjectBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	FString ObjectDataPath = TEXT("/Game/Blueprints/Data/DT_PlaceableObjectData");
+	static ConstructorHelpers::FObjectFinder<UDataTable> DT_OBJECTDATA(*ObjectDataPath);
+	check(DT_OBJECTDATA.Succeeded());
+	PlaceableObjectTable = DT_OBJECTDATA.Object;
+	check(PlaceableObjectTable->GetRowMap().Num() > 0);
+
+	// Set DataTableRowHandle Defualt value
+	FDataTableRowHandle InObjectNameInTable;
+	InObjectNameInTable.DataTable = PlaceableObjectTable;
+	InObjectNameInTable.RowName = FName("House");
+	SetObjectNameInTable(InObjectNameInTable);
+
+	// Create ObjectMesh StaticMesh Component
+	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObjectMesh"));
+	ObjectMesh->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Game/StarterContent/Shapes/Shape_Plane"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Accepted"));
+	if (MeshAsset.Succeeded())
+	{
+		ObjectMesh->SetStaticMesh(MeshAsset.Object);
+		ObjectMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
+		if(MaterialAsset.Succeeded())
+		{
+			ObjectMesh->SetMaterial(0, MaterialAsset.Object);
+		}
+	}
+
+	// Material Asset Defualt Value
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AcceptedMaterial(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Accepted"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> RejectMaterial(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Rejected"));
+	if (AcceptedMaterial.Succeeded() && RejectMaterial.Succeeded())
+	{
+		BuildingAcceptedMaterial = AcceptedMaterial.Object;
+		BuildingRejectedMaterial = RejectMaterial.Object;
+	}
 }
 
-// Called when the game starts or when spawned
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   BeginPlay
+  
+  @Summary:  Called when the game starts or when spawned
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Binding UpdateResourceevent, If there are not enough resources to build, the building material will turn red
+	
 	
 }
 
-// Called every frame
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   CallUpdateResourceAmount
+  
+  @Category: Custom Event
+  
+  @Summary:  This event will be called every time the number of resources in the Build Manager is updated.
+  
+  @Args:     FConstructionCost NewResourceAmout
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlacerObjectBase::CallUpdateResourceAmount(FConstructionCost NewResourceAmount, bool IsEnoughResource)
+{
+	if(IsEnoughResource)
+		ObjectMesh->SetMaterial(0, BuildingAcceptedMaterial);
+	else
+		ObjectMesh->SetMaterial(0, BuildingRejectedMaterial);
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   Tick
+  
+  @Summary:  Called every frame
+  
+  @Args:     float DeltaTime
+			 Delta Seconds between frames
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   SetupObjectPlacer
+  
+  @Category: Parent Functions
+  
+  @Summary:  Setup Object Placer's ObjectData
+  
+  @Modifies: [ObjectData, PlaceableObjectClass, ObjectSize,
+             MaxHeightDifferenceForConstruction]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlacerObjectBase::SetupObjectPlacer()
+{
+	FName LocalRowName = GetObjectNameInTable().RowName;
+	FPlaceableObjectData* OutRow = GetObjectNameInTable().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
+	
+	if (OutRow != nullptr)
+	{
+		// Set OutRow -> PlaceableObjectClass, ObjectSize, MaxHeightDifferenceForConstruction
+		SetObjectData(OutRow);
+		SetPlaceableObjectClass(GetObjectData()->PlacaebleObjectClass);
+		SetObjectSize(FIntPoint(FMath::Clamp<int32>(GetObjectData()->ObjectSize.X, 1, GetObjectData()->ObjectSize.X),
+			FMath::Clamp<int32>(GetObjectData()->ObjectSize.Y, 1, GetObjectData()->ObjectSize.Y)));
+		SetMaxHeightDifferenceForConstruction(GetObjectData()->MaxHeightDifferenceForConstruction);
+	}
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   ActivateObjectPlacer
+  
+  @Category: Parent Functions
+  
+  @Summary:  Set Visibility Activate Placer's ObjectMesh
+  
+  @Modifies: [ObjectMesh]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlacerObjectBase::ActivateObjectPlacer()
+{
+	SetActorTickEnabled(true);
+	ObjectMesh->SetVisibility(true, true);
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   DeactivateObjectPlacer
+  
+  @Category: Parent Functions
+  
+  @Summary:  Destroy Actor
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlacerObjectBase::DeactivateObjectPlacer()
+{
+	K2_DestroyActor();
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   BuildObject
+  
+  @Category: Parent Functions
+  
+  @Summary:  Spawn PlaceableObject on Child Placer Actor
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlacerObjectBase::BuildObject()
+{
+	//Overrided
+}
+
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   RotateObjectPlacer
+  
+  @Category: Parent Functions
+  
+  @Summary:  Rotate Object Placer's ObjectMesh
+  
+  @Args:     bool bLeft
+  
+  @Modifies: [ObjectMesh, BuildDirection]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlacerObjectBase::RotateObjectPlacer(bool bLeft)
+{
+	SetObjectSize(FIntPoint(GetObjectSize().Y, GetObjectSize().X));
+	float DeltaRotationYaw = bLeft ? -90.0f : 90.0f;
+	ObjectMesh->AddRelativeRotation(FRotator(0.0f, DeltaRotationYaw, 0.0f));
+	int32 Direction = bLeft ? -1 : 1;
+	int32 Direction2 = (Direction + GetBuildDirection()) < 0 ? 3 : Direction + GetBuildDirection();
+	int32 Direction3 = (Direction + GetBuildDirection()) > 3 ? 0 : Direction2;
+	SetBuildDirection(Direction3);
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   HidePlaceIndicators
+  
+  @Category: Parent Functions
+  
+  @Summary:  Hide Placer's Material
+  
+  @Modifies: [PlaceIndicators, PlaceMeshUsingAmount]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlacerObjectBase::HidePlaceIndicators()
+{
+	for(auto element : PlaceIndicators)
+	{
+		element->SetVisibility(false);
+	}
+	SetPlaceMeshUsingAmount(0);
+}
+
+
+
 

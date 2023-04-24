@@ -1,9 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "PlaceableObjectBase.h"
 #include "PlaceableObjectsData.h"
-#include "BuildManager.h"
 
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -22,6 +20,11 @@ APlaceableObjectBase::APlaceableObjectBase()
 	check(DT_OBJECTDATA.Succeeded());
 	PlaceableObjectTable = DT_OBJECTDATA.Object;
 	check(PlaceableObjectTable->GetRowMap().Num() > 0);
+	// Set DataTableRowHandle Defualt value
+	FDataTableRowHandle InObjectNameInTable;
+	InObjectNameInTable.DataTable = PlaceableObjectTable;
+	InObjectNameInTable.RowName = FName("House");
+	SetObjectNameInTable(InObjectNameInTable);
 	
 	SphereVisual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
 	SphereVisual->SetupAttachment(RootComponent);
@@ -32,12 +35,6 @@ APlaceableObjectBase::APlaceableObjectBase()
 		SphereVisual->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
 		SphereVisual->SetWorldScale3D(FVector(0.8f));
 	}
-	
-	// Set DataTableRowHandle Defualt value
-	FDataTableRowHandle InObjectNameInTable;
-	InObjectNameInTable.DataTable = PlaceableObjectTable;
-	InObjectNameInTable.RowName = FName("House");
-	SetObjectNameInTable(InObjectNameInTable);
 
 	SetupPlaceableObject();
 	SetupOutline();
@@ -68,6 +65,21 @@ void APlaceableObjectBase::BeginPlay()
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   Tick
+  
+  @Summary:  Called every frame
+  
+  @Args:     float DeltaTime
+			 Delta Seconds between frames
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+// Called every frame
+void APlaceableObjectBase::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   EndPlay
   
   @Summary:  Called when the game ends
@@ -79,6 +91,7 @@ void APlaceableObjectBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	UpdatePlaceableObjectCursorEvent.Unbind();
 }
+
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   OnBeginCursorOver
@@ -116,23 +129,11 @@ void APlaceableObjectBase::OnEndCursorOver(UPrimitiveComponent* TouchedComponent
 	}
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   Tick
-  
-  @Summary:  Called every frame
-  
-  @Args:     float DeltaTime
-             Delta Seconds between frames
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-// Called every frame
-void APlaceableObjectBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SetupPlaceableObject
+
+  @Category: Parent Functions
   
   @Summary:  Setup PlaceableObject called when object construct
 
@@ -144,7 +145,6 @@ void APlaceableObjectBase::SetupPlaceableObject()
 {
 	FName LocalRowName = GetObjectNameInTable().RowName;
 	FPlaceableObjectData* OutRow = GetObjectNameInTable().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
-
 	
 	if (OutRow != nullptr)
 	{
@@ -168,7 +168,6 @@ void APlaceableObjectBase::SetupPlaceableObject()
 			SetOccupiedCenterCell(GetObjectDynamicData()->ObjectCenterCell);
 			// Set Object Height
 			SetObjectHeight(GetObjectDynamicData()->Height);
-
 			// todo : Update Resources Value
 		}
 		else
@@ -186,6 +185,8 @@ void APlaceableObjectBase::SetupPlaceableObject()
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SetupOutline
+
+  @Category: Parent Functions
   
   @Summary:  Get Mesh Components and Setup to use Outline material
   
@@ -199,19 +200,43 @@ void APlaceableObjectBase::SetupOutline()
 		if(MeshComponents.Num() > 0)
 		{
 			for (int32 i = 0; i < MeshComponents.Num(); i++)
-			{
 				Meshesforoutline.Add(Cast<UStaticMeshComponent>(MeshComponents[i]));
-			}
 			for (int32 j = 0; j < GetMeshesforoutline().Num(); j++)
-			{
 				GetMeshesforoutline()[j]->SetRenderCustomDepth(true);
-			}	
 		}
 	}
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   SetObjectSeletecStat
+  
+  @Category: Parent Functions
+  
+  @Summary:  Called in BuildManager when Select Object to change selectd state
+  
+  @Args:     bool IsSelected
+  
+  @Modifies: [bObjectSelected]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlaceableObjectBase::SetObjectSelectedMode(bool IsSelected) //선택모드
+{
+	SetbObjectSelected(IsSelected);
+	if(GetbObjectSelected() == false)
+	{
+		SwapObjectHighlighting(false);
+		//todo : HP Bar UnVisible
+	}
+	else if(GetbObjectSelected() == true)
+	{
+		SwapObjectHighlighting(true);
+		//todo : HP Bar Visible
+	}
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SwapObjectHighlighting
+
+  @Category: Parent Functions
   
   @Summary:  Swap Setting Outline, HP UI according to bool parameter
   
@@ -238,11 +263,24 @@ void APlaceableObjectBase::SwapObjectHighlighting(bool IsEnable)
 	}
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   DestroyPlaceableObject
+  
+  @Category: Parent Functions
+  
+  @Summary:  Destory Actor
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlaceableObjectBase::DestroyPlaceableObject()
+{
+	//todo : Set Occupancy Data in BuildManager before object is Destroy
+	K2_DestroyActor();
+}
+
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   LSwapObjectOutline
   
-  @Summary:  SetDepthStencilValue for Outline according to bool parameter
+  @Summary:  Local Function for SetDepthStencilValue for Outline according to bool parameter
   
   @Args:     bool IsEnable
              check value when mouse cursor begin or over
@@ -254,14 +292,9 @@ void APlaceableObjectBase::LSwapObjectOutline(bool IsEnable)
 		if (IsEnable)
 		{
 			if (GetObjectSide() == 0)
-			{
 				GetMeshesforoutline()[i]->SetCustomDepthStencilValue(1);
-				
-			}
 			else
-			{
 				GetMeshesforoutline()[i]->SetCustomDepthStencilValue(1);
-			}
 		}
 		else
 		{

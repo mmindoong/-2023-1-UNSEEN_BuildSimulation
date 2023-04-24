@@ -14,13 +14,13 @@ class APlacerObjectBase;
 USTRUCT(BlueprintType)
 struct FPlaceableObjectData : public FTableRowBase
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	APlacerObjectBase* ObjectPlacerClass;
+	TSubclassOf<APlacerObjectBase> ObjectPlacerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	APlaceableObjectBase* PlacaebleObjectClass;
+	TSubclassOf<APlaceableObjectBase> PlacaebleObjectClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	FConstructionCost ConstructionCost;
