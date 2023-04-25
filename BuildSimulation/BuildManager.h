@@ -63,13 +63,19 @@ public:
 	/* GridSystem Functions */
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
 	void SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount);
+	
+	UFUNCTION(BlueprintCallable, Category = "GridSystem")
+	void DrawPlacementIndicators();
 
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	TArray<FIntPoint> GetCellsinRectangularArea(FVector CenterLocation, FIntPoint TileCount);
+	FVector GetCellLocation(FIntPoint InCell, bool& bSuccess);
 
 	/* Data Functions */
 	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
-	void SetOccupancyData(FIntPoint Cell, bool IsOccupied);
+	bool CheckOccupancyData(FIntPoint Cell);
+	
+	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
+	void ChangeOccupancyData(FIntPoint Cell, bool IsOccupied);
 
 	UFUNCTION(BlueprintCallable, Category = "Data|Object")
 	void SetObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
@@ -129,7 +135,13 @@ private:
 	FVector GridBottomLeftCornerLocation = FVector(0.0f, 0.0f, 0.0f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	float GridOffsetFromGround = -2.0f;
+	float StartTraceHeight = 3000.0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
+	float EndTraceHeight = -3000.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
+	float VerticalStep;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FLinearColor PlayerOutlineColor = FLinearColor::Red;
@@ -174,6 +186,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
 	bool bDemolitionToolEnabled = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
+	bool bPlacerIndicatorEnabled = false;
 
 	/* Data Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
@@ -244,13 +259,34 @@ private:
 	
 	void LChangeObjectforPlacement(FDataTableRowHandle NewObjectRow);
 
+	// Local Function about Get Grid's Information
 	FIntPoint LGetCellfromWorldLocation(FVector Location);
 
+	FVector2D LGetCellCenter(FIntPoint InCell);
+	
+	float LRoundHeightToGridStep(float InNewHeight);
+
+	FVector2D LGetCenterOfRectangularArea(FIntPoint AreaCenterCell, FIntPoint AreaSize);
+
+	TArray<FIntPoint> LGetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount);
+	
+	
+	// Resource Check
 	bool LCheckifEnoughResources(FConstructionCost InCost);
 
+	
 	/* Getter & Setter */
 	FORCEINLINE FVector GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
 	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation) { GridBottomLeftCornerLocation = InLocation; }
+
+	FORCEINLINE float GetStartTraceHeight() const { return StartTraceHeight; }
+	FORCEINLINE void SetStartTraceHeight(float InStartTraceHeight) { StartTraceHeight = InStartTraceHeight; }
+
+	FORCEINLINE float GetEndTraceHeight() const { return EndTraceHeight; }
+	FORCEINLINE void SetInEndTraceHeight(float InEndTraceHeight) { EndTraceHeight = InEndTraceHeight; }
+
+	FORCEINLINE float GetVerticalStep() const { return VerticalStep; }
+	FORCEINLINE void SetVerticalStep(float InVerticalStep) { VerticalStep = InVerticalStep; }
 
 	FORCEINLINE bool GetbObjectForPlacementIsSelected() const { return bObjectForPlacementIsSelected; }
 	FORCEINLINE void SetbObjectForPlacementIsSelected(bool InbObjectForPlacementIsSelected) { bObjectForPlacementIsSelected = InbObjectForPlacementIsSelected; }
@@ -260,6 +296,9 @@ private:
 
 	FORCEINLINE bool GetbBuildToolEnabled() const { return bBuildToolEnabled; }
 	FORCEINLINE void SetbBuildToolEnabled(const bool& InBuildToolEnabled) { bBuildToolEnabled = InBuildToolEnabled; }
+
+	FORCEINLINE bool GetbPlacerIndicatorEnabled() const { return bPlacerIndicatorEnabled; }
+	FORCEINLINE void SetbPlacerIndicatorEnabled(bool InbPlacerIndicatorEnabled) { bPlacerIndicatorEnabled =InbPlacerIndicatorEnabled; }
 
 	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
 	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }

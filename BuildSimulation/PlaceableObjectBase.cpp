@@ -15,27 +15,34 @@ APlaceableObjectBase::APlaceableObjectBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	FString ObjectDataPath = TEXT("/Game/Blueprints/Data/DT_PlaceableObjectData");
-	static ConstructorHelpers::FObjectFinder<UDataTable> DT_OBJECTDATA(*ObjectDataPath);
-	check(DT_OBJECTDATA.Succeeded());
-	PlaceableObjectTable = DT_OBJECTDATA.Object;
-	check(PlaceableObjectTable->GetRowMap().Num() > 0);
+	
+	static ConstructorHelpers::FObjectFinder<UDataTable> DT_OBJECTDATA(TEXT("/Game/Blueprints/Data/DT_ObjectData"));
+	if(DT_OBJECTDATA.Succeeded())
+	{
+		PlaceableObjectTable = DT_OBJECTDATA.Object;
+		check(PlaceableObjectTable->GetRowMap().Num() > 0);
+		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] DT_ObjectData Asset Load"));	
+	}
 	// Set DataTableRowHandle Defualt value
 	FDataTableRowHandle InObjectNameInTable;
 	InObjectNameInTable.DataTable = PlaceableObjectTable;
 	InObjectNameInTable.RowName = FName("House");
 	SetObjectNameInTable(InObjectNameInTable);
 	
+
 	SphereVisual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
 	SphereVisual->SetupAttachment(RootComponent);
+
+	
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/StarterContent/Shapes/Shape_Sphere"));
 	if (SphereVisualAsset.Succeeded())
 	{
+		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] SphereVisualAsset Asset Load"));
 		SphereVisual->SetStaticMesh(SphereVisualAsset.Object);
 		SphereVisual->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
 		SphereVisual->SetWorldScale3D(FVector(0.8f));
 	}
-
+	
 	SetupPlaceableObject();
 	SetupOutline();
 	
@@ -181,6 +188,7 @@ void APlaceableObjectBase::SetupPlaceableObject()
 			SetObjectSize(ReturnValue);
 		}
 	}
+	
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

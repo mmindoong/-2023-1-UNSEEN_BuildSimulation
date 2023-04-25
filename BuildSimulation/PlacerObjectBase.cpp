@@ -19,19 +19,21 @@ APlacerObjectBase::APlacerObjectBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	FString ObjectDataPath = TEXT("/Game/Blueprints/Data/DT_PlaceableObjectData");
-	static ConstructorHelpers::FObjectFinder<UDataTable> DT_OBJECTDATA(*ObjectDataPath);
-	check(DT_OBJECTDATA.Succeeded());
-	PlaceableObjectTable = DT_OBJECTDATA.Object;
-	check(PlaceableObjectTable->GetRowMap().Num() > 0);
-
+	
+	static ConstructorHelpers::FObjectFinder<UDataTable> DT_OBJECTDATA(TEXT("/Game/Blueprints/Data/DT_ObjectData"));
+	if(DT_OBJECTDATA.Succeeded())
+	{
+		PlaceableObjectTable = DT_OBJECTDATA.Object;
+		check(PlaceableObjectTable->GetRowMap().Num() > 0);
+		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] DT_ObjectData Asset Load"));		
+	}
+	
 	// Set DataTableRowHandle Defualt value
 	FDataTableRowHandle InObjectNameInTable;
 	InObjectNameInTable.DataTable = PlaceableObjectTable;
 	InObjectNameInTable.RowName = FName("House");
 	SetObjectNameInTable(InObjectNameInTable);
-
+	
 	// Create ObjectMesh StaticMesh Component
 	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObjectMesh"));
 	ObjectMesh->SetupAttachment(RootComponent);
@@ -39,6 +41,7 @@ APlacerObjectBase::APlacerObjectBase()
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Accepted"));
 	if (MeshAsset.Succeeded())
 	{
+		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] ObjectMesh Asset Load"));
 		ObjectMesh->SetStaticMesh(MeshAsset.Object);
 		ObjectMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
 		if(MaterialAsset.Succeeded())
@@ -47,14 +50,23 @@ APlacerObjectBase::APlacerObjectBase()
 		}
 	}
 
+	
 	// Material Asset Defualt Value
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AcceptedMaterial(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Accepted"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> RejectMaterial(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Rejected"));
-	if (AcceptedMaterial.Succeeded() && RejectMaterial.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlacingAcceptedMaterial(TEXT("/Game/GridBasedBuilder/Materials/Place_Indicators/MI_Place_Accepted"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlacingRejectMaterial(TEXT("/Game/GridBasedBuilder/Materials/Place_Indicators/MI_Place_Rejected"));
+	if (AcceptedMaterial.Succeeded() && RejectMaterial.Succeeded() && PlacingAcceptedMaterial.Succeeded() && PlacingRejectMaterial.Succeeded())
 	{
+		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] PlacerMaterial Asset Load"));
 		BuildingAcceptedMaterial = AcceptedMaterial.Object;
 		BuildingRejectedMaterial = RejectMaterial.Object;
+		PlaceAcceptedMaterial = PlacingAcceptedMaterial.Object;
+		PlaceRejectedMaterial = PlacingRejectMaterial.Object;
 	}
+
+	SetupObjectPlacer();
+	
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -114,6 +126,7 @@ void APlacerObjectBase::Tick(float DeltaTime)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::SetupObjectPlacer()
 {
+	
 	FName LocalRowName = GetObjectNameInTable().RowName;
 	FPlaceableObjectData* OutRow = GetObjectNameInTable().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
 	
@@ -126,6 +139,7 @@ void APlacerObjectBase::SetupObjectPlacer()
 			FMath::Clamp<int32>(GetObjectData()->ObjectSize.Y, 1, GetObjectData()->ObjectSize.Y)));
 		SetMaxHeightDifferenceForConstruction(GetObjectData()->MaxHeightDifferenceForConstruction);
 	}
+	
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -140,7 +154,8 @@ M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::ActivateObjectPlacer()
 {
 	SetActorTickEnabled(true);
-	ObjectMesh->SetVisibility(true, true);
+	if(IsValid(ObjectMesh))
+		ObjectMesh->SetVisibility(true, true);
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

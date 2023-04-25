@@ -52,12 +52,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ObjectMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
+	UMaterialInterface* PlaceAcceptedMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
+	UMaterialInterface* PlaceRejectedMaterial;
+
 	/* Public Getter & Setter */
 	FORCEINLINE bool GetbCanbeDraggged() const { return bCanbeDraggged; }
 	FORCEINLINE void SetbCanbeDraggged(bool InbCanbeDraggged) { bCanbeDraggged = InbCanbeDraggged; }
 
 	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
 	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
+
+	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
+	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
+
+	FORCEINLINE float GetMaxHeightDifferenceForConstruction() { return MaxHeightDifferenceForConstruction; }
+	FORCEINLINE void SetMaxHeightDifferenceForConstruction(float InMaxHeightDifferenceForConstruction) { MaxHeightDifferenceForConstruction = InMaxHeightDifferenceForConstruction; }
+
+	FORCEINLINE TArray<UStaticMeshComponent*> GetPlaceIndicators() { return PlaceIndicators; }
+	FORCEINLINE void SetPlaceIndicators(TArray<UStaticMeshComponent*> InPlaceIndicators) { PlaceIndicators = InPlaceIndicators; }
 
 private:
 	FPlaceableObjectData* ObjectData;
@@ -76,6 +91,7 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	UMaterialInterface* BuildingRejectedMaterial;
+	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	bool bCanbeDraggged;
@@ -110,17 +126,8 @@ private:
 	FORCEINLINE TSubclassOf<APlaceableObjectBase> GetPlaceableObjectClass() { return PlaceableObjectClass; }
 	FORCEINLINE void SetPlaceableObjectClass(TSubclassOf<APlaceableObjectBase> InPlaceableObjectClass) { PlaceableObjectClass = InPlaceableObjectClass; }
 
-	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
-	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
-
-	FORCEINLINE float GetMaxHeightDifferenceForConstruction() { return MaxHeightDifferenceForConstruction; }
-	FORCEINLINE void SetMaxHeightDifferenceForConstruction(float InMaxHeightDifferenceForConstruction) { MaxHeightDifferenceForConstruction = InMaxHeightDifferenceForConstruction; }
-
 	FORCEINLINE int32 GetBuildDirection() const { return BuildDirection; }
 	FORCEINLINE void SetBuildDirection(int32 InBuildDirection) { BuildDirection = InBuildDirection; }
-
-	FORCEINLINE TArray<UStaticMeshComponent*> GetPlaceIndicators() { return PlaceIndicators; }
-	FORCEINLINE void SetPlaceIndicators(TArray<UStaticMeshComponent*> InPlaceIndicators) { PlaceIndicators = InPlaceIndicators; }
 
 	FORCEINLINE int32 GetPlaceMeshUsingAmount() const { return PlaceMeshUsingAmount; }
 	FORCEINLINE void SetPlaceMeshUsingAmount(int32 InPlaceMeshUsingAmount) { PlaceMeshUsingAmount = InPlaceMeshUsingAmount; }
