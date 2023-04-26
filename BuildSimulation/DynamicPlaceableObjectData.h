@@ -22,6 +22,15 @@ struct FDynamicPlaceableObjectData
 		Side = 0;
 	}
 
+	FDynamicPlaceableObjectData(bool InHasData, FIntPoint InObjectCenterCell, int32 InDirection, float InHeight, int32 InSide )
+	{
+		HasData = InHasData;
+		ObjectCenterCell = InObjectCenterCell;
+		Direction = InDirection;
+		Height = InHeight;
+		Side = InSide;
+	}
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool HasData;
 	

@@ -57,9 +57,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void DestroyPlaceableObject();
 	
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* SphereVisual;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
+	FDataTableRowHandle ObjectNameInTable;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
+	FDynamicPlaceableObjectData ObjectDynamicData;
 	
 	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
 	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }
@@ -67,26 +72,24 @@ public:
 	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
 	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
 
-	FORCEINLINE FDynamicPlaceableObjectData* GetObjectDynamicData() const { return ObjectDynamicData; }
-	FORCEINLINE void SetObjectDynamicData(FDynamicPlaceableObjectData* InObjectDynamicData) { ObjectDynamicData = InObjectDynamicData; }
+	FORCEINLINE FDynamicPlaceableObjectData GetObjectDynamicData() const { return ObjectDynamicData; }
+	FORCEINLINE void SetObjectDynamicData(FDynamicPlaceableObjectData InObjectDynamicData) { ObjectDynamicData = InObjectDynamicData; }
 
 	FORCEINLINE int32 GetObjectSide() const { return ObjectSide; }
 	FORCEINLINE void SetObjectSide(int32 InObjectSide) { ObjectSide = InObjectSide; }
+
+	FORCEINLINE FDataTableRowHandle GetObjectNameInTable() const { return ObjectNameInTable; }
+	FORCEINLINE void SetObjectNameInTable(FDataTableRowHandle InObjectNameInTable) { ObjectNameInTable = InObjectNameInTable; }
 
 private:
 	/* Local Function Library */
 	void LSwapObjectOutline(bool IsEnable);
 	
 	FPlaceableObjectData* ObjectData;
-	FDynamicPlaceableObjectData Data = FDynamicPlaceableObjectData();
-	FDynamicPlaceableObjectData* ObjectDynamicData = &Data;
 
 	/* Setting Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	class UDataTable* PlaceableObjectTable;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
-	FDataTableRowHandle ObjectNameInTable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	int32 ObjectSide = 0;
@@ -151,9 +154,6 @@ private:
 
 	FORCEINLINE TArray<UStaticMeshComponent*> GetMeshesforoutline() const { return Meshesforoutline; }
 	FORCEINLINE void SetMeshesforoutline(TArray<UStaticMeshComponent*> InMeshesforoutline) { Meshesforoutline = InMeshesforoutline; }
-
-	FORCEINLINE FDataTableRowHandle GetObjectNameInTable() const { return ObjectNameInTable; }
-	FORCEINLINE void SetObjectNameInTable(FDataTableRowHandle InObjectNameInTable) { ObjectNameInTable = InObjectNameInTable; }
 
 	FORCEINLINE float GetStartingHealthPercent() const { return StartingHealthPercent; }
 	FORCEINLINE void SetStartingHealthPercent(float InStartingHealthPercent) { StartingHealthPercent = InStartingHealthPercent; }

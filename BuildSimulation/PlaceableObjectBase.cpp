@@ -29,22 +29,17 @@ APlaceableObjectBase::APlaceableObjectBase()
 	InObjectNameInTable.RowName = FName("House");
 	SetObjectNameInTable(InObjectNameInTable);
 	
-
 	SphereVisual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
 	SphereVisual->SetupAttachment(RootComponent);
-
 	
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/StarterContent/Shapes/Shape_Sphere"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/Fantastic_Village_Pack/meshes/buildings/SM_BLD_balcony_v02_01"));
 	if (SphereVisualAsset.Succeeded())
 	{
 		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] SphereVisualAsset Asset Load"));
 		SphereVisual->SetStaticMesh(SphereVisualAsset.Object);
 		SphereVisual->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
-		SphereVisual->SetWorldScale3D(FVector(0.8f));
+		SphereVisual->SetRelativeRotation(FRotator(0.0f, 90.0f, -30.0f));
 	}
-	
-	SetupPlaceableObject();
-	SetupOutline();
 	
 }
 
@@ -110,7 +105,6 @@ void APlaceableObjectBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlaceableObjectBase::OnBeginCursorOver(UPrimitiveComponent* TouchedComponent)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, FString::Printf(TEXT("OnBeginCursorOver")));
 	SwapObjectHighlighting(true);
 	if(UpdatePlaceableObjectCursorEvent.IsBound())
 	{
@@ -128,7 +122,6 @@ void APlaceableObjectBase::OnBeginCursorOver(UPrimitiveComponent* TouchedCompone
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlaceableObjectBase::OnEndCursorOver(UPrimitiveComponent* TouchedComponent)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, FString::Printf(TEXT("OnEndCursorOver")));
 	SwapObjectHighlighting(false);
 	if(UpdatePlaceableObjectCursorEvent.IsBound())
 	{
@@ -165,16 +158,16 @@ void APlaceableObjectBase::SetupPlaceableObject()
 		SetStartingHealthPercent(FMath::Clamp<float>(GetStartingHealthPercent(), 0.0f, 100.0f));
 		// If the object was placed on the map in the editor, not during the game, the dynamic data will not be set and the object itself will occupy the necessary cells
 
-		if (GetObjectDynamicData()->HasData)
+		if (GetObjectDynamicData().HasData)
 		{
 			// Set Object -> Object Direction, Object Size, Build Manager, Occupied Center Cell, Occupied Cells, Object Height
-			SetObjectDirection(GetObjectDynamicData()->Direction);
+			SetObjectDirection(GetObjectDynamicData().Direction);
 			FIntPoint ReturnValue = GetObjectDirection() == 0 || GetObjectDirection() == 2 ? FIntPoint(GetObjectSize().X, GetObjectSize().Y) : FIntPoint(GetObjectSize().Y, GetObjectSize().X);
 			SetObjectSize(ReturnValue);
 			// Set Occupied Center Cell
-			SetOccupiedCenterCell(GetObjectDynamicData()->ObjectCenterCell);
+			SetOccupiedCenterCell(GetObjectDynamicData().ObjectCenterCell);
 			// Set Object Height
-			SetObjectHeight(GetObjectDynamicData()->Height);
+			SetObjectHeight(GetObjectDynamicData().Height);
 			// todo : Update Resources Value
 		}
 		else

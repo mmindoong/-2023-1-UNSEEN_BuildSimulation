@@ -69,6 +69,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
 	FVector GetCellLocation(FIntPoint InCell, bool& bSuccess);
+	
+	UFUNCTION(BlueprintCallable, Category = "GridSystem")
+	FIntPoint GetCellfromWorldLocation(FVector Location);
 
 	/* Data Functions */
 	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
@@ -116,7 +119,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* StaticMeshComponent;
-	
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMesh* IndicatorMesh;
+
 
 private:
 	FPlaceableObjectData* PlaceableObjectData;
@@ -144,7 +150,7 @@ private:
 	float VerticalStep;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	FLinearColor PlayerOutlineColor = FLinearColor::Red;
+	FLinearColor PlayerOutlineColor = FLinearColor::Green;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FLinearColor EnemyOutlineColor = FLinearColor::Red;
@@ -260,9 +266,8 @@ private:
 	void LChangeObjectforPlacement(FDataTableRowHandle NewObjectRow);
 
 	// Local Function about Get Grid's Information
-	FIntPoint LGetCellfromWorldLocation(FVector Location);
 
-	FVector2D LGetCellCenter(FIntPoint InCell);
+	FVector2D LGetCellCenterToLocation(FIntPoint InCell);
 	
 	float LRoundHeightToGridStep(float InNewHeight);
 

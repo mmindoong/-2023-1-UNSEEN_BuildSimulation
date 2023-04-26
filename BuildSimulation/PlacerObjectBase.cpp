@@ -38,7 +38,7 @@ APlacerObjectBase::APlacerObjectBase()
 	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObjectMesh"));
 	ObjectMesh->SetupAttachment(RootComponent);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Game/StarterContent/Shapes/Shape_Plane"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Accepted"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("/Game/GridAssets/Materials/Building_Indicators/MI_Building_Accepted"));
 	if (MeshAsset.Succeeded())
 	{
 		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] ObjectMesh Asset Load"));
@@ -49,13 +49,12 @@ APlacerObjectBase::APlacerObjectBase()
 			ObjectMesh->SetMaterial(0, MaterialAsset.Object);
 		}
 	}
-
 	
 	// Material Asset Defualt Value
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AcceptedMaterial(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Accepted"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> RejectMaterial(TEXT("/Game/GridBasedBuilder/Materials/Building_Indicators/MI_Building_Rejected"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlacingAcceptedMaterial(TEXT("/Game/GridBasedBuilder/Materials/Place_Indicators/MI_Place_Accepted"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlacingRejectMaterial(TEXT("/Game/GridBasedBuilder/Materials/Place_Indicators/MI_Place_Rejected"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AcceptedMaterial(TEXT("/Game/GridAssets/Materials/Building_Indicators/MI_Building_Accepted"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> RejectMaterial(TEXT("/Game/GridAssets/Materials/Building_Indicators/MI_Building_Rejected"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlacingAcceptedMaterial(TEXT("/Game/GridAssets/Materials/Place_Indicators/MI_Place_Accepted"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PlacingRejectMaterial(TEXT("/Game/GridAssets/Materials/Place_Indicators/MI_Place_Rejected"));
 	if (AcceptedMaterial.Succeeded() && RejectMaterial.Succeeded() && PlacingAcceptedMaterial.Succeeded() && PlacingRejectMaterial.Succeeded())
 	{
 		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] PlacerMaterial Asset Load"));
@@ -65,6 +64,13 @@ APlacerObjectBase::APlacerObjectBase()
 		PlaceRejectedMaterial = PlacingRejectMaterial.Object;
 	}
 
+	// Placer Indicator Mesh Asset Load
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> IndicatorMeshAsset(TEXT("/Game/GridAssets/Meshes/SM_Plane_100x100"));
+	if (IndicatorMeshAsset.Succeeded())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] IndicatorMesh Asset Load"));
+		IndicatorMesh = IndicatorMeshAsset.Object;
+	}
 	SetupObjectPlacer();
 	
 }
@@ -121,8 +127,7 @@ void APlacerObjectBase::Tick(float DeltaTime)
   
   @Summary:  Setup Object Placer's ObjectData
   
-  @Modifies: [ObjectData, PlaceableObjectClass, ObjectSize,
-             MaxHeightDifferenceForConstruction]
+  @Modifies: [ObjectData, PlaceableObjectClass, ObjectSize]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::SetupObjectPlacer()
 {
@@ -132,12 +137,12 @@ void APlacerObjectBase::SetupObjectPlacer()
 	
 	if (OutRow != nullptr)
 	{
-		// Set OutRow -> PlaceableObjectClass, ObjectSize, MaxHeightDifferenceForConstruction
+		// Set OutRow -> PlaceableObjectClass, ObjectSize
 		SetObjectData(OutRow);
 		SetPlaceableObjectClass(GetObjectData()->PlacaebleObjectClass);
 		SetObjectSize(FIntPoint(FMath::Clamp<int32>(GetObjectData()->ObjectSize.X, 1, GetObjectData()->ObjectSize.X),
 			FMath::Clamp<int32>(GetObjectData()->ObjectSize.Y, 1, GetObjectData()->ObjectSize.Y)));
-		SetMaxHeightDifferenceForConstruction(GetObjectData()->MaxHeightDifferenceForConstruction);
+		
 	}
 	
 }
@@ -170,18 +175,6 @@ void APlacerObjectBase::DeactivateObjectPlacer()
 	K2_DestroyActor();
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   BuildObject
-  
-  @Category: Parent Functions
-  
-  @Summary:  Spawn PlaceableObject on Child Placer Actor
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::BuildObject()
-{
-	//Overrided
-}
-
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   RotateObjectPlacer
@@ -212,7 +205,7 @@ void APlacerObjectBase::RotateObjectPlacer(bool bLeft)
   
   @Summary:  Hide Placer's Material
   
-  @Modifies: [PlaceIndicators, PlaceMeshUsingAmount]
+  @Modifies: [PlaceIndicators]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::HidePlaceIndicators()
 {
@@ -220,9 +213,35 @@ void APlacerObjectBase::HidePlaceIndicators()
 	{
 		element->SetVisibility(false);
 	}
-	SetPlaceMeshUsingAmount(0);
 }
 
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   CreateIndicatorMesh
+  
+  @Category: Parent Functions
+  
+  @Summary:  Create, setup and return new mesh 
+  
+  @Args:     TArray<UStaticMeshComponent*> PlaceIndicators, bool bPlaceEnabled
+  
+  @Returns:  UStaticMeshComponent*
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void APlacerObjectBase::CreateIndicatorMesh(bool bPlaceEnabled)
+{
+	UMaterialInterface* MeshMaterial = bPlaceEnabled ? PlaceAcceptedMaterial : PlaceRejectedMaterial;
+	UStaticMeshComponent* NewComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass()); // Class로부터 불러오기, 매번 새로운 컴포넌트 생성
+	NewComponent->RegisterComponent();
+	NewComponent->SetupAttachment(ObjectMesh);
+	if(NewComponent->IsRegistered())
+	{
+		NewComponent->SetStaticMesh(IndicatorMesh);
+		NewComponent->SetMaterial(0, MeshMaterial);
+		NewComponent->SetVisibility(true);
+		PlaceIndicators.Add(NewComponent);
+		
+	}
+	
+}
 
 
 
