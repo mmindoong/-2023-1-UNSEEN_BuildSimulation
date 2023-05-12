@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PlaceableObjectsData.h"
-#include "DynamicPlaceableObjectData.h"
+#include "Data/PlaceableObjectsData.h"
+#include "Data/DynamicPlaceableObjectData.h"
 #include "PlacerObjectBase.generated.h"
 
 class APlaceableObjectBase;

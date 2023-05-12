@@ -5,8 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
-#include "PlaceableObjectsData.h"
-#include "DynamicPlaceableObjectData.h"
+#include "Data/PlaceableObjectsData.h"
+#include "Data/DynamicPlaceableObjectData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "PlaceableObjectBase.generated.h"
@@ -55,16 +55,19 @@ public:
 	void SwapObjectHighlighting(bool IsEnable);
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
-	void DestroyPlaceableObject();
+	void DemolitionPlaceableObject();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* SphereVisual;
+	UStaticMeshComponent* ObjectMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
 	FDataTableRowHandle ObjectNameInTable;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
 	FDynamicPlaceableObjectData ObjectDynamicData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
+	TArray<FIntPoint> OccupiedCells;
 	
 	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
 	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }

@@ -3,7 +3,7 @@
 
 #include "PlacerObjectBase.h"
 
-#include "BuildManager.h"
+#include "Build/BuildManager.h"
 #include "Kismet/GameplayStatics.h"
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -71,7 +71,7 @@ APlacerObjectBase::APlacerObjectBase()
 		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] IndicatorMesh Asset Load"));
 		IndicatorMesh = IndicatorMeshAsset.Object;
 	}
-	SetupObjectPlacer();
+
 	
 }
 
@@ -131,7 +131,6 @@ void APlacerObjectBase::Tick(float DeltaTime)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::SetupObjectPlacer()
 {
-	
 	FName LocalRowName = GetObjectNameInTable().RowName;
 	FPlaceableObjectData* OutRow = GetObjectNameInTable().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
 	

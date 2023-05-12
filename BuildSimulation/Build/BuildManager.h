@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PlaceableObjectBase.h"
-#include "PlacerObjectBase.h"
-#include "PlaceableObjectsData.h"
+#include "PlaceableObject//PlaceableObjectBase.h"
+#include "Placer/PlacerObjectBase.h"
+#include "Data/PlaceableObjectsData.h"
+#include "GridSystemComponent.h"
 #include "BuildManager.generated.h"
 
 /* Delegate Declare */
@@ -81,7 +82,8 @@ public:
 	void ChangeOccupancyData(FIntPoint Cell, bool IsOccupied);
 
 	UFUNCTION(BlueprintCallable, Category = "Data|Object")
-	void SetObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
+	void SetupObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
+
 
 	/* Tool Functions */
 	UFUNCTION(BlueprintCallable, Category="Tool")
@@ -95,6 +97,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Tool")
 	void DeactivateDemolitionTool();
+
+	UFUNCTION(BlueprintCallable, Category="Tool")
+	void DestorySelectedPlaceableObject();
 	
 	/* Resource Functions */
 	UFUNCTION(BlueprintCallable, Category = "Resource")
@@ -123,6 +128,8 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMesh* IndicatorMesh;
 
+	UPROPERTY(VisibleAnywhere)
+	UGridSystemComponent* GridSystemComponent;
 
 private:
 	FPlaceableObjectData* PlaceableObjectData;
@@ -196,6 +203,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
 	bool bPlacerIndicatorEnabled = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
+	bool bBuildObjecEnabled = false;
+
 	/* Data Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
 	TMap<FIntPoint, int32> OccupancyData;
@@ -267,14 +277,13 @@ private:
 
 	// Local Function about Get Grid's Information
 
-	FVector2D LGetCellCenterToLocation(FIntPoint InCell);
+	FVector2D GetCellCenterToLocation(FIntPoint InCell);
 	
 	float LRoundHeightToGridStep(float InNewHeight);
 
 	FVector2D LGetCenterOfRectangularArea(FIntPoint AreaCenterCell, FIntPoint AreaSize);
 
 	TArray<FIntPoint> LGetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount);
-	
 	
 	// Resource Check
 	bool LCheckifEnoughResources(FConstructionCost InCost);
@@ -304,6 +313,9 @@ private:
 
 	FORCEINLINE bool GetbPlacerIndicatorEnabled() const { return bPlacerIndicatorEnabled; }
 	FORCEINLINE void SetbPlacerIndicatorEnabled(bool InbPlacerIndicatorEnabled) { bPlacerIndicatorEnabled =InbPlacerIndicatorEnabled; }
+
+	FORCEINLINE bool GetbBuildObjecEnabled() const { return bBuildObjecEnabled; }
+	FORCEINLINE void SetbBuildObjecEnabled(bool InbBuildObjecEnabled) { bBuildObjecEnabled = InbBuildObjecEnabled; }
 
 	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
 	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }

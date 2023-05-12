@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "PlaceableObjectBase.h"
-#include "PlaceableObjectsData.h"
+#include "Data/PlaceableObjectsData.h"
 
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -17,11 +17,12 @@ APlaceableObjectBase::APlaceableObjectBase()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	static ConstructorHelpers::FObjectFinder<UDataTable> DT_OBJECTDATA(TEXT("/Game/Blueprints/Data/DT_ObjectData"));
+	
 	if(DT_OBJECTDATA.Succeeded())
 	{
 		PlaceableObjectTable = DT_OBJECTDATA.Object;
 		check(PlaceableObjectTable->GetRowMap().Num() > 0);
-		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] DT_ObjectData Asset Load"));	
+		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] DT_ObjectData Asset Load"));
 	}
 	// Set DataTableRowHandle Defualt value
 	FDataTableRowHandle InObjectNameInTable;
@@ -29,16 +30,16 @@ APlaceableObjectBase::APlaceableObjectBase()
 	InObjectNameInTable.RowName = FName("House");
 	SetObjectNameInTable(InObjectNameInTable);
 	
-	SphereVisual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
-	SphereVisual->SetupAttachment(RootComponent);
+	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
+	ObjectMesh->SetupAttachment(RootComponent);
 	
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/Fantastic_Village_Pack/meshes/buildings/SM_BLD_balcony_v02_01"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/Low_Poly_Viking_World/Models/Constructions/SM_House_01_A"));
 	if (SphereVisualAsset.Succeeded())
 	{
 		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] SphereVisualAsset Asset Load"));
-		SphereVisual->SetStaticMesh(SphereVisualAsset.Object);
-		SphereVisual->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
-		SphereVisual->SetRelativeRotation(FRotator(0.0f, 90.0f, -30.0f));
+		ObjectMesh->SetStaticMesh(SphereVisualAsset.Object);
+		ObjectMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 150.0f));
+		ObjectMesh->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
 	}
 	
 }
@@ -52,10 +53,10 @@ void APlaceableObjectBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (SphereVisual != nullptr)
+	if (ObjectMesh != nullptr)
 	{
-		SphereVisual->OnBeginCursorOver.AddDynamic(this, &APlaceableObjectBase::OnBeginCursorOver);
-		SphereVisual->OnEndCursorOver.AddDynamic(this, &APlaceableObjectBase::OnEndCursorOver);
+		ObjectMesh->OnBeginCursorOver.AddDynamic(this, &APlaceableObjectBase::OnBeginCursorOver);
+		ObjectMesh->OnEndCursorOver.AddDynamic(this, &APlaceableObjectBase::OnEndCursorOver);
 		UE_LOG(LogTemp, Warning, TEXT("AddDynamic"));
 	}
 	else
@@ -149,6 +150,7 @@ void APlaceableObjectBase::SetupPlaceableObject()
 	if (OutRow != nullptr)
 	{
 		// Set OutRow -> MaxHP, HP, BorderEnbaled, OutlineEnabled, HPBarEnabled
+		ObjectMesh->SetStaticMesh(OutRow->Mesh);
 		SetObjectData(OutRow);
 		SetObjectSize(GetObjectData()->ObjectSize);
 		SetMaxHP(GetObjectData()->HealthPoints);
@@ -271,7 +273,7 @@ void APlaceableObjectBase::SwapObjectHighlighting(bool IsEnable)
   
   @Summary:  Destory Actor
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlaceableObjectBase::DestroyPlaceableObject()
+void APlaceableObjectBase::DemolitionPlaceableObject()
 {
 	//todo : Set Occupancy Data in BuildManager before object is Destroy
 	K2_DestroyActor();
