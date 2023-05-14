@@ -27,8 +27,6 @@ ABuildManager::ABuildManager()
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	GridSystemComponent = CreateDefaultSubobject<UGridSystemComponent>(TEXT("GridSystemComponent"));
 	RootComponent = InstancedStaticMeshComponent;
-
-	SetGridCenterLocation(GetActorLocation());
 	
 	// Outline Material Asset Load
 	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> MaterialCollection(TEXT("/Game/GridAssets/Materials/Outline/MPC_OutlineCollection"));
@@ -83,16 +81,16 @@ M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if(GetbBuildToolEnabled() || GetbDemolitionToolEnabled())
+	if(GridSystemComponent->GetbBuildToolEnabled() || GridSystemComponent->GetbDemolitionToolEnabled())
 	{
 		UpdateBuildingManagerValues();
-		if(GetbPlacerIndicatorEnabled() && GetbPlaceableObjectSelected() == false)
+		if(GridSystemComponent->GetbPlacerIndicatorEnabled() && GridSystemComponent->GetbPlaceableObjectSelected() == false)
 		{
 			DrawPlacementIndicators();
 		}
-		if(GetbDemolitionToolEnabled())
+		if(GridSystemComponent->GetbDemolitionToolEnabled())
 		{
-			if(bInteractStarted)
+			if(GridSystemComponent->GetbInteractStarted())
 			{
 				FTimerHandle WaitHandle;
 				float WaitTime = 0.07f; 
@@ -143,80 +141,18 @@ void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* I
 		if(IsValid(GetPlaceableObjectUnderCursor()))
 		{
 			// Demolition이 가능한지 판단
-			if(GetbDemolitionToolEnabled())
+			if(GridSystemComponent->GetbDemolitionToolEnabled())
 			{
 				if(IsValid(GetPCI()))
 					GetPCI()->SetScalarParameterValue(FName("EnableShading"), 1.0f);
 			}
 			else
 			{
-				LSetOutlineColor(GetPlaceableObjectUnderCursor()->GetObjectSide());
+				SetOutlineColor(GetPlaceableObjectUnderCursor()->GetObjectSide());
 				if(IsValid(GetPCI()))
 					GetPCI()->SetScalarParameterValue(FName("EnableShading"), -0.5f);
 			}
 		}
-	}
-}
-
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   BuildPlaceableObject
-
-  @Category: Main
-  
-  @Summary:  Spawn PlaceableObject Actor, Set new data
-
-  @Modifies: [PlaceableObjectBase, OccupancyData, ObjectData]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::BuildPlaceableObject()
-{
-	FVector2D SpawnCenterLocation = LGetCenterOfRectangularArea(GetCellUnderCursor(), GetActivePlacer()->GetObjectSize());
-	FVector SpawnLocation = FVector(SpawnCenterLocation.X , SpawnCenterLocation.Y, GetLocationUnderCursorCamera().Z);
-	FRotator SpawnRotator = FRotator(0.0f, 0.0f, 0.0f);
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	if(GetWorld() && GetbBuildObjecEnabled())
-	{
-		SetPlaceableObjectBase(Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(APlaceableObjectBase::StaticClass(), SpawnLocation, SpawnRotator, SpawnParams)));
-		FDataTableRowHandle NewOjectDataRow;
-		NewOjectDataRow.DataTable = GetPlaceableObjectBase()->GetObjectNameInTable().DataTable;
-		NewOjectDataRow.RowName =  GetActivePlacer()->GetObjectNameInTable().RowName;
-		GetPlaceableObjectBase()->SetObjectNameInTable(NewOjectDataRow);
-		//DynamicObject 구조체 PlaceableObject 생성시 설정
-		FDynamicPlaceableObjectData ObjectDynamicData = FDynamicPlaceableObjectData(true, GetCellUnderCursor(), GetActivePlacer()->GetBuildDirection(), 0.0f, 0.0f);
-		GetPlaceableObjectBase()->SetObjectDynamicData(ObjectDynamicData);
-
-		// Object RowName, DynamicData 설정 후 Setting 진행
-		GetPlaceableObjectBase()->SetupPlaceableObject();
-		GetPlaceableObjectBase()->SetupOutline();
-	}
-
-	if(IsValid(GetPlaceableObjectBase()))
-	{
-		// Build Manger에서 점유된 셀 정보 세팅해주기
-		if(GetPlaceableObjectBase()->GetObjectDynamicData().HasData)
-		{
-			TArray<FIntPoint> GetOccupiedCells = LGetCellsinRectangularArea(GetPlaceableObjectBase()->GetOccupiedCenterCell(), GetPlaceableObjectBase()->GetObjectSize());
-			for (FIntPoint cells : GetOccupiedCells)
-			{
-				ChangeOccupancyData(cells, true);
-				SetupObjectData(cells, GetPlaceableObjectBase());
-				GetPlaceableObjectBase()->OccupiedCells.Add(cells);
-			}
-		}
-		else 
-		{
-			GetPlaceableObjectBase()->SetOccupiedCenterCell(FIntPoint(GetActorLocation().X, GetActorLocation().Y));
-			TArray<FIntPoint> GetOccupiedCells = LGetCellsinRectangularArea(GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()), GetPlaceableObjectBase()->GetObjectSize());
-			for (FIntPoint cells : GetOccupiedCells)
-			{
-				ChangeOccupancyData(cells, true);
-				SetupObjectData(cells, GetPlaceableObjectBase());
-				GetPlaceableObjectBase()->OccupiedCells.Add(cells);
-			}
-		}
-		// Binding event when PlaceableObject construct
-		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
 	}
 }
 
@@ -234,11 +170,11 @@ void ABuildManager::BuildPlaceableObject()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::PressedLMB()
 {
-	SetbInteractStarted(true); // 클릭했는지 Released에서 확인용
+	GridSystemComponent->SetbInteractStarted(true); // 클릭했는지 Released에서 확인용
 	SelectPlaceableObject();
-	if(GetbObjectForPlacementIsSelected())
+	if(GridSystemComponent->GetbObjectForPlacementIsSelected())
 	{
-		SetbDragWasInterrupted(false);
+		GridSystemComponent->SetbDragWasInterrupted(false);
 		FHitResult ResultCamera;
 		if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery2, bTraceComplex, ResultCamera))
 		{
@@ -260,23 +196,85 @@ void ABuildManager::PressedLMB()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::ReleasedLMB()
 {
-	if(GetbInteractStarted())
+	if(GridSystemComponent->GetbInteractStarted())
 	{
-		if(GetbBuildToolEnabled() && GetbObjectForPlacementIsSelected())
+		if(GridSystemComponent->GetbBuildToolEnabled() && GridSystemComponent->GetbObjectForPlacementIsSelected())
 		{
-			if(IsValid(GetActivePlacer()))
+			if(IsValid(GridSystemComponent->GetActivePlacer()))
 			{
-				if(LCheckifEnoughResources(GetActivePlacer()->GetObjectData()->ConstructionCost))
+				if(LCheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost))
 				{
 					BuildPlaceableObject();
 				}
 			}
 		}
-		SetbInteractStarted(false);
-		SetbDragStarted(false);
-		SetbDragWasInterrupted(false);
+		GridSystemComponent->SetbInteractStarted(false);
+		GridSystemComponent->SetbDragStarted(false);
+		GridSystemComponent->SetbDragWasInterrupted(false);
 	}
 	
+}
+
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   BuildPlaceableObject
+
+  @Category: Main
+  
+  @Summary:  Spawn PlaceableObject Actor, Set new data
+
+  @Modifies: [PlaceableObjectBase, OccupancyData, ObjectData]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::BuildPlaceableObject()
+{
+	FVector2D SpawnCenterLocation = GridSystemComponent->GetCenterOfRectangularArea(GetCellUnderCursor(), GridSystemComponent->GetActivePlacer()->GetObjectSize());
+	FVector SpawnLocation = FVector(SpawnCenterLocation.X , SpawnCenterLocation.Y, GetLocationUnderCursorCamera().Z);
+	FRotator SpawnRotator = FRotator(0.0f, 0.0f, 0.0f);
+	FActorSpawnParameters SpawnParams;
+
+	if(GetWorld() && GridSystemComponent->GetbBuildObjecEnabled())
+	{
+		SetPlaceableObjectBase(Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(APlaceableObjectBase::StaticClass(), SpawnLocation, SpawnRotator, SpawnParams)));
+		FDataTableRowHandle NewOjectDataRow;
+		NewOjectDataRow.DataTable = GetPlaceableObjectBase()->GetObjectNameInTable().DataTable;
+			NewOjectDataRow.RowName =  GridSystemComponent->GetActivePlacer()->GetObjectNameInTable().RowName;
+			GetPlaceableObjectBase()->SetObjectNameInTable(NewOjectDataRow);
+			//DynamicObject 구조체 PlaceableObject 생성시 설정
+			FDynamicPlaceableObjectData ObjectDynamicData = FDynamicPlaceableObjectData(true, GetCellUnderCursor(),GridSystemComponent->GetActivePlacer()->GetBuildDirection(), 0.0f, 0.0f);
+			GetPlaceableObjectBase()->SetObjectDynamicData(ObjectDynamicData);
+
+			// Object RowName, DynamicData 설정 후 Setting 진행
+			GetPlaceableObjectBase()->SetupPlaceableObject();
+		GetPlaceableObjectBase()->SetupOutline();
+	}
+
+	if(IsValid(GetPlaceableObjectBase()))
+	{
+		// Build Manger에서 점유된 셀 정보 세팅해주기
+		if(GetPlaceableObjectBase()->GetObjectDynamicData().HasData)
+		{
+			TArray<FIntPoint> GetOccupiedCells = GridSystemComponent->GetCellsinRectangularArea(GetPlaceableObjectBase()->GetOccupiedCenterCell(), GetPlaceableObjectBase()->GetObjectSize());
+			for (FIntPoint cells : GetOccupiedCells)
+			{
+				ChangeOccupancyData(cells, true);
+				SetupObjectData(cells, GetPlaceableObjectBase());
+				GetPlaceableObjectBase()->OccupiedCells.Add(cells);
+			}
+		}
+		else 
+		{
+			GetPlaceableObjectBase()->SetOccupiedCenterCell(FIntPoint(GetActorLocation().X, GetActorLocation().Y));
+			TArray<FIntPoint> GetOccupiedCells = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()), GetPlaceableObjectBase()->GetObjectSize());
+			for (FIntPoint cells : GetOccupiedCells)
+			{
+				ChangeOccupancyData(cells, true);
+				SetupObjectData(cells, GetPlaceableObjectBase());
+				GetPlaceableObjectBase()->OccupiedCells.Add(cells);
+			}
+		}
+		// Binding event when PlaceableObject construct
+		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
+	}
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -307,6 +305,7 @@ void ABuildManager::UpdateBuildingManagerValues()
 		if(ResultCamera.bBlockingHit)
 		{
 			SetLocationUnderCursorCamera(ResultCamera.Location);
+			GridSystemComponent->SetLocationUnderCursorCamera(GetLocationUnderCursorCamera());
 		}
 	}
 
@@ -321,8 +320,31 @@ void ABuildManager::UpdateBuildingManagerValues()
 		SetbCellUnderCursorHasChanged(false);
 
 	
-	FIntPoint Cell= GetCellfromWorldLocation(GetLocationUnderCursorCamera());
+	FIntPoint Cell= GridSystemComponent->GetCellfromWorldLocation(GetLocationUnderCursorCamera());
 	SetCellUnderCursor(Cell);
+}
+
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   DetectMouseDrag
+  
+  @Category: Main
+  
+  @Summary:  Set bool DragStart Variable
+
+  @Modifies: [bDragStarted]
+M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+void ABuildManager::DetectMouseDrag()
+{
+	if(IsValid(GridSystemComponent->GetActivePlacer()))
+	{
+		// Placer가 드래그가능한 상태, BuildManager는 Interact 시작이면서 Drag는 안한 상태
+		if(GridSystemComponent->GetActivePlacer()->GetbCanbeDraggged() && GridSystemComponent->GetbInteractStarted() && GridSystemComponent->GetbDragStarted()==false)
+		{
+			float Squared = UKismetMathLibrary::VSize2DSquared(static_cast<FVector2d>(GetStartLocationUnderCursor() - GetLocationUnderCursorCamera()));
+			if(Squared > GetStartDragInstance()* GetStartDragInstance())
+				GridSystemComponent->SetbDragStarted(true);
+		}
+	}
 }
 
 
@@ -338,7 +360,7 @@ void ABuildManager::UpdateBuildingManagerValues()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::SelectPlaceableObject()
 {
-	if (GetbBuildToolEnabled() == false) 
+	if (GridSystemComponent->GetbBuildToolEnabled() == false) 
 	{
 		// 1. Placeable Object 아래에 커서가 존재할 경우
 		if(IsValid(GetPlaceableObjectUnderCursor()))
@@ -350,17 +372,17 @@ void ABuildManager::SelectPlaceableObject()
 					GetSelectedPlaceableObject()->SetObjectSelectedMode(false); // 기존에 선택된 Object는 비워줌.
 			}
 			SetSelectedPlaceableObject(PlaceableObjectUnderCursor); // 커서 아래있는 오브젝트가 현재 선택된 오브젝트로 변경
-			SetbPlaceableObjectSelected(true);
+			GridSystemComponent->SetbPlaceableObjectSelected(true);
 			GetSelectedPlaceableObject()->SetObjectSelectedMode(true);
 			// 클릭시 Outline, Material Color 변경
-			LSetOutlineColor(1);
+			SetOutlineColor(1);
 			if(IsValid(GetPCI()))
 				GetPCI()->SetScalarParameterValue(FName("EnableShading"), 0.4f);
 		}
 		// 2. Placeable Object 아래에 커서가 존재하지 않는 경우
 		else
 		{
-			SetbPlaceableObjectSelected(false); // 선택된 상태가 아닌 것으로 판단
+			GridSystemComponent->SetbPlaceableObjectSelected(false); // 선택된 상태가 아닌 것으로 판단
 			if (IsValid(GetSelectedPlaceableObject())) 
 			{
 				GetSelectedPlaceableObject()->SetObjectSelectedMode(false);
@@ -372,10 +394,10 @@ void ABuildManager::SelectPlaceableObject()
 
 void ABuildManager::DeselectPlaceableObject()
 {
-	if(GetbPlaceableObjectSelected() && IsValid(GetSelectedPlaceableObject()))
+	if(GridSystemComponent->GetbPlaceableObjectSelected() && IsValid(GetSelectedPlaceableObject()))
 	{
 		GetSelectedPlaceableObject()->SetObjectSelectedMode(false);
-		SetbPlaceableObjectSelected(false);
+		GridSystemComponent->SetbPlaceableObjectSelected(false);
 		if(GetPlaceableObjectUnderCursor() == GetSelectedPlaceableObject())
 		{
 			GetSelectedPlaceableObject()->SwapObjectHighlighting(true);
@@ -384,49 +406,9 @@ void ABuildManager::DeselectPlaceableObject()
 	}
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   CancelDragObjectPlacing
-  
-  @Category: Main
-  
-  @Summary:  Detect Cancel Drag and Hide activated Placer Actor
 
-  @Modifies: [bDragWasInterrupted]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::CancelDragObjectPlacing()
-{
-	if(GetbInteractStarted())
-	{
-		SetbDragWasInterrupted(true); // Drag Cancel Detect
-		if(IsValid(GetActivePlacer()))
-		{
-			GetActivePlacer()->HidePlaceIndicators();
-		}
-	}
-}
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   DetectMouseDrag
-  
-  @Category: Main
-  
-  @Summary:  Set bool DragStart Variable
 
-  @Modifies: [bDragStarted]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::DetectMouseDrag()
-{
-	if(IsValid(GetActivePlacer()))
-	{
-		// Placer가 드래그가능한 상태, BuildManager는 Interact 시작이면서 Drag는 안한 상태
-		if(GetActivePlacer()->GetbCanbeDraggged() && GetbInteractStarted() && GetbDragStarted()==false)
-		{
-			float Squared = UKismetMathLibrary::VSize2DSquared(static_cast<FVector2d>(GetStartLocationUnderCursor()-GetLocationUnderCursorCamera()));
-			if(Squared > GetStartDragInstance()* GetStartDragInstance())
-				SetbDragStarted(true);
-		}
-	}
-}
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   RotateObject
@@ -440,14 +422,15 @@ void ABuildManager::DetectMouseDrag()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::RotateObject(bool bLeft)
 {
-	if(GetbBuildToolEnabled())
-		GetActivePlacer()->RotateObjectPlacer(true);
+	if(GridSystemComponent->GetbBuildToolEnabled())
+		GridSystemComponent->GetActivePlacer()->RotateObjectPlacer(true);
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   SpawnGrid
 
-  @Category: GridSystem
+/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+  @Method:   SpawnTileMap
+
+  @Category: Main
   
   @Summary:  Spawn Tile Map with Instanced static mesh
   
@@ -457,35 +440,33 @@ void ABuildManager::RotateObject(bool bLeft)
   @Modifies: [GridCenterLocation, GridTileSize, GridTileCount,
               InstancedStaticMeshComponent]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount)
+void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntPoint TileCount)
 {
 	// Save the variables for later. We'll need them as long as the grid is alive.
-	SetGridCenterLocation(CenterLocation);
-	SetGridTileSize(TileSize);
-	SetGridTileCount(TileCount);
+	GridSystemComponent->SetGridCenterLocation(CenterLocation);
+	
+	GridSystemComponent->SetGridTileSize(TileSize);
+	GridSystemComponent->SetGridTileCount(TileCount);
 
 	// Even/Odd to Round
-	GridTileCount.X = round(TileCount.X);
-	GridTileCount.Y = round(TileCount.Y);
-
+	GridSystemComponent->SetGridTileCount( FIntPoint(round(TileCount.X), round(TileCount.Y)));
 	InstancedStaticMeshComponent->ClearInstances();
 
 	// Find the bottom left corner of our grid and Center grid, to start spawning tiles from there.
-	LCalculateCenterandBottomLeft();
+	GridSystemComponent->CalculateCenterandBottomLeft();
 
-	for (int Index = 0; Index <= round(GridTileCount.X) - 1; Index++)
+	for (int Index = 0; Index <= GridSystemComponent->GetGridTileCount().X - 1; Index++)
 	{
 		int X = Index;
 
-		for (int Index2 = 0; Index2 <= round(GridTileCount.Y) - 1; Index2++)
+		for (int Index2 = 0; Index2 <= GridSystemComponent->GetGridTileCount().Y - 1; Index2++)
 		{
 			int Y = Index2;
 
 			// Find the Tile transform based on it's index (X,Y) and the variables we defined before.
-			FVector TileTransformLocation = GetGridBottomLeftCornerLocation() + FVector(0.0f, 0.0f, 2.0f) + GridTileSize * FVector((float)X, (float)Y, 0.0f);
+			FVector TileTransformLocation = GridSystemComponent->GetGridBottomLeftCornerLocation() + FVector(0.0f, 0.0f, 2.0f) + GridSystemComponent->GetGridTileSize() * FVector((float)X, (float)Y, 0.0f);
 			// Mesh Size
-			FVector TileTransformScale = GridTileSize / FVector(100.0f, 100.0f, 100.0f);
-
+			FVector TileTransformScale = GridSystemComponent->GetGridTileSize() / FVector(100.0f, 100.0f, 100.0f);
 			FTransform TileTransform;
 			TileTransform.SetLocation(TileTransformLocation);
 			TileTransform.SetScale3D(TileTransformScale);
@@ -509,6 +490,8 @@ void ABuildManager::SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoin
 }
 
 
+
+
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   DrawPlacementIndicators
   
@@ -520,19 +503,19 @@ void ABuildManager::DrawPlacementIndicators()
 {
 	if(GetbCellUnderCursorHasChanged())
 	{
-		SetbBuildObjecEnabled(true);
+		GridSystemComponent->SetbBuildObjecEnabled(true);
 		// Set Placer Object Mesh's World Location
-		FVector2D CenterIndicators = LGetCenterOfRectangularArea(GetCellUnderCursor(), GetActivePlacer()->GetObjectSize());
+		FVector2D CenterIndicators = GridSystemComponent->GetCenterOfRectangularArea(GetCellUnderCursor(), GridSystemComponent->GetActivePlacer()->GetObjectSize());
 		bool bSuccess = false;
-		FVector CellLocation = GetCellLocation(GetCellUnderCursor(), bSuccess);
+		FVector CellLocation = GridSystemComponent->GetCellLocation(GetCellUnderCursor(), GetLocationUnderCursorCamera(), bSuccess);
 		float BaseBuildLocationLOCAL = CellLocation.Z;
-		GetActivePlacer()->ObjectMesh->SetWorldLocation(FVector(CenterIndicators.X, CenterIndicators.Y, BaseBuildLocationLOCAL));
-		TArray<FIntPoint> CellsforBuild = LGetCellsinRectangularArea(GetCellUnderCursor(), GetActivePlacer()->GetObjectSize());
+		GridSystemComponent->GetActivePlacer()->ObjectMesh->SetWorldLocation(FVector(CenterIndicators.X, CenterIndicators.Y, BaseBuildLocationLOCAL));
+		TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GetCellUnderCursor(), GridSystemComponent->GetActivePlacer()->GetObjectSize());
 		for (int32 Index = 0; Index != CellsforBuild.Num(); Index++)
 		{
 			bool bSuccessforIndicators = false;
-			FVector CellLocationLOCAL = GetCellLocation(CellsforBuild[Index], bSuccessforIndicators);
-			GetActivePlacer()->PlaceIndicators[Index]->SetWorldLocation(CellLocationLOCAL);
+			FVector CellLocationLOCAL = GridSystemComponent->GetCellLocation(CellsforBuild[Index], GetLocationUnderCursorCamera(),bSuccessforIndicators);
+			GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetWorldLocation(CellLocationLOCAL);
 
 			if(bSuccessforIndicators)
 			{
@@ -540,82 +523,20 @@ void ABuildManager::DrawPlacementIndicators()
 				if(CheckOccupancyData(CellsforBuild[Index])==false)
 				{
 					
-					GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GetActivePlacer()->PlaceAcceptedMaterial);
+					GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceAcceptedMaterial);
 				}
 				else
 				{
-					GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GetActivePlacer()->PlaceRejectedMaterial);
-					SetbBuildObjecEnabled(false);
+					GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceRejectedMaterial);
+					GridSystemComponent->SetbBuildObjecEnabled(false);
 				}	
 			}
-			
 		}
 	}
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   GetCellLocation
-  
-  @Category: GridSystem
-  
-  @Summary:  Get Changed Cell Location's Location(Z is Zero)
-  
-  @Args:     FIntPoint InCell, bool& bSuccess
-             Cell Value, and bool that Line Trace Hit was occured
-  
-  @Returns:  FVector
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-FVector ABuildManager::GetCellLocation(FIntPoint InCell, bool& bSuccess)
-{
-	FVector2D CellCenter = GetCellCenterToLocation(InCell);
-	FVector LocationLOCAL = FVector(CellCenter.X, CellCenter.Y, 0.0f);
 
-	FHitResult HitResult;
-	FVector StartLocation = FVector(LocationLOCAL.X, LocationLOCAL.Y, GetStartTraceHeight()+GetLocationUnderCursorCamera().Z);
-	FVector EndLocation =  FVector(LocationLOCAL.X, LocationLOCAL.Y, GetEndTraceHeight()+GetLocationUnderCursorCamera().Z);
-	TArray<AActor*> ActorsToIgnore;
 
-	bool IsHitResult = UKismetSystemLibrary::LineTraceSingle(
-		GetWorld(),
-		StartLocation,
-		EndLocation,
-		TraceTypeQuery1,
-		false,
-		ActorsToIgnore,
-		EDrawDebugTrace::None,
-		HitResult,
-		true,
-		FLinearColor::Red,
-		FLinearColor::Green,
-		0.5f);
-	if(IsHitResult == true)
-	{
-		float RoundHeight = LRoundHeightToGridStep(HitResult.Location.Z);
-		LocationLOCAL = FVector(LocationLOCAL.X, LocationLOCAL.Y, RoundHeight);
-		bSuccess = true;
-		return LocationLOCAL;
-	}
-	bSuccess = false;
-	return LocationLOCAL;	
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   GetCellfromWorldLocation
-
-  @Summary:  Local Function for return grid cell from World Location
-  
-  @Args:     FVector Location
-			 The World location(Mouse Cursor) for getting cell
-  
-  @Returns:  FIntPoint
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-FIntPoint ABuildManager::GetCellfromWorldLocation(FVector Location)
-{
-	int32 X = FMath::Abs(FMath::RoundToInt32(Location.X / GetGridTileSize().X)) * FMath::Sign(FMath::RoundToInt32(Location.X / GetGridTileSize().X));
-	int32 Y = FMath::Abs(FMath::RoundToInt32(Location.Y / GetGridTileSize().Y)) * FMath::Sign(FMath::RoundToInt32(Location.Y / GetGridTileSize().Y));
-	
-	return FIntPoint(X,Y);
-}
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   CheckOccupancyData
@@ -678,129 +599,11 @@ void ABuildManager::SetupObjectData(FIntPoint Cell, APlaceableObjectBase* Placea
 
 
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   ActivateBuildingTool
-
-  @Category: Tool
-  
-  @Summary:  Spawn Placer Actor and change to new activate Placer
-  
-  @Args:     FDataTableRowHandle ObjectforBuilding
-             the object's data row for change
-  
-  @Modifies: [bBuildToolEnabled, 
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::ActivateBuildingTool(FDataTableRowHandle ObjectforBuilding)
-{
-	DeactivateBuildingTool();
-	LChangeObjectforPlacement(ObjectforBuilding);
-	if(GetbObjectForPlacementIsSelected())
-	{
-		SetbBuildToolEnabled(true);
-		if(IsValid(GetActivePlacer()))
-		{
-			GetActivePlacer()->DeactivateObjectPlacer();
-		}
-		UpdateBuildingManagerValues();
-		FVector SpawnLocation = GetLocationUnderCursorCamera();
-		FRotator rotator = FRotator(0.0f, 0.0f, 0.0f);
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = this;
-
-		if(GetWorld())
-		{
-			FDataTableRowHandle NewPlacerDataRow;
-			NewPlacerDataRow.DataTable = GetObjectForPlacement().DataTable;
-			NewPlacerDataRow.RowName =  GetObjectForPlacement().RowName;
-			
-			SetActivePlacer(Cast<APlacerObjectBase>(GetWorld()->SpawnActor<AActor>(APlacerObjectBase::StaticClass(), SpawnLocation, rotator, SpawnParams)));
-			GetActivePlacer()->SetObjectNameInTable(NewPlacerDataRow);
-			GetActivePlacer()->SetupObjectPlacer();
-		}
-		if(IsValid(GetActivePlacer()))
-		{
-			GetActivePlacer()->ActivateObjectPlacer(); // Activate Object Placer
-			for(int32 index = 0; index <= GetActivePlacer()->GetObjectSize().X * GetActivePlacer()->GetObjectSize().Y -1; index++ )
-			{
-				GetActivePlacer()->CreateIndicatorMesh(true);
-				GetActivePlacer()->PlaceIndicators[index]->SetRelativeScale3D(FVector(GetGridTileSize().X/100 , GetGridTileSize().Y /100, 1.0f));
-			}
-			SetbPlacerIndicatorEnabled(true);
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, FString::Printf(TEXT("GetActivePlacer is NULL")));
-		}
-	}
-	
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   DeactivateBuildingTool
-  
-  @Category: Tool
-  
-  @Summary:  Cancel Placing and Destroy current activated Placer Actor
-  
-  @Modifies: [bObjectForPlacementIsSelected, bBuildToolEnabled]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::DeactivateBuildingTool()
-{
-	if(GetbBuildToolEnabled())
-	{
-		if(GetbDragStarted()) // 이미 드래그중이었는지
-			CancelDragObjectPlacing();
-		else
-		{
-			SetbPlaceableObjectSelected(false);
-			SetbBuildToolEnabled(false);
-			if(IsValid(GetActivePlacer()))
-			{
-				GetActivePlacer()->DeactivateObjectPlacer();
-			}
-		}
-	}
-		
-	
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   ActivateDemolitionTool
-  
-  @Category: Tool
-  
-  @Summary:  Actiavte Dmeolitoin tool by Deactivate Building tool
-  
-  @Modifies: [bDemolitionToolEnabled]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::ActivateDemolitionTool()
-{
-	DeactivateBuildingTool();
-	SetbDemolitionToolEnabled(true);
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   DeactivateDemolitionTool
-  
-  @Category: Tool
-  
-  @Summary:  Deactiavte Dmeolitoin tool
-  
-  @Modifies: [bDemolitionToolEnabled]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::DeactivateDemolitionTool()
-{
-	if(GetbDemolitionToolEnabled()) //원래 활성화되어있었는지 확인
-	{
-		SetbDemolitionToolEnabled(false);
-		CallUpdatePlaceableObjectUnderCursor(GetPlaceableObjectUnderCursor(), false); 
-	}
-}
 
 
 void ABuildManager::DestorySelectedPlaceableObject()
 {
-	if(GetbPlaceableObjectSelected())
+	if(GridSystemComponent->GetbPlaceableObjectSelected())
 	{
 		if(IsValid(GetSelectedPlaceableObject()))
 		{
@@ -882,76 +685,18 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 }
 
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LSnapVectorToVector
-  
-  @Summary:  Local Funtion for Sanp Vector to Vector
-  
-  @Args:     FVector CurrentPosition, FVector SnapValue
-  
-  @Returns:  FVector
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-FVector ABuildManager::LSnapVectorToVector(FVector CurrentPosition, FVector SnapValue)
-{
-	FVector Return;
-	Return.X = FMath::RoundToInt32(CurrentPosition.X / SnapValue.X)* SnapValue.X;
-	Return.Y = FMath::RoundToInt32(CurrentPosition.Y / SnapValue.Y) * SnapValue.Y;
-	Return.Z = FMath::RoundToInt32(CurrentPosition.Z / SnapValue.Z) * SnapValue.Z;
-	
-	return Return;
-}
+
+
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LSnapFlaotToFloat
-  
-  @Summary:  Local Funtion for Sanp Float to Float
-  
-  @Args:     float CurrentPosition, float SnapValue
-  
-  @Returns:  float
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-float ABuildManager::LSnapFlaotToFloat(float CurrentLocation, float GridSize)
-{
-	float Return = FMath::RoundToInt32(CurrentLocation / GridSize) * GridSize;
-
-	return Return;
-
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LCalculateCenterandBottomLeft
-  
-  @Summary:  Local Funtion for Calculate BottomLeftCorner using Center Location
-  
-  @Args:     float CurrentPosition, float SnapValue
-  
-  @Modifies: [GridCenterLocation, GridBottomLeftCornerLocation]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::LCalculateCenterandBottomLeft()
-{
-	FVector NewVector = LSnapVectorToVector(GridCenterLocation, GridTileSize);
-	FIntPoint AlignVector;
-
-	AlignVector.X = GridTileCount.X % 2 == 0 ? 0 : 1;
-	AlignVector.Y = GridTileCount.Y, 2 == 0 ? 0 : 1;
-
-	FIntPoint Divided = (GridTileCount - AlignVector) / 2;
-	FVector GridCount = FVector(Divided.X * GridTileSize.X, Divided.Y * GridTileSize.Y, 1.0f);
-	
-	SetGridCenterLocation(NewVector);
-	SetGridBottomLeftCornerLocation(NewVector - GridCount);
-	
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LSetOutlineColor
+  @Method:   SetOutlineColor
   
   @Summary:  Local Function for set Material Collection Parameter to set outline color
   
   @Args:     int32 ObjectSide
              PlaceableObject's Outline Color determining demolition
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::LSetOutlineColor(int32 ObjectSide)
+void ABuildManager::SetOutlineColor(int32 ObjectSide)
 {
 	if(IsValid(GetPCI()))
 	{
@@ -973,125 +718,8 @@ void ABuildManager::LSetOutlineColor(int32 ObjectSide)
 	}
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LChangeObjectforPlacement
-  
-  @Summary:  Local Function for Changing Object Data using new DT Row
-  
-  @Args:     FDataTableRowHandle NewObjectRow
-  
-  @Modifies: [ObjectForPlacement, PlaceableObjectData,
-             bObjectForPlacementIsSelected]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::LChangeObjectforPlacement(FDataTableRowHandle NewObjectRow)
-{
-	SetObjectForPlacement(NewObjectRow);
-	if(GetObjectForPlacement().RowName != FName("None"))
-	{
-		FName LocalRowName = GetObjectForPlacement().RowName;
-		FPlaceableObjectData* OutRow = GetObjectForPlacement().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
-		if (OutRow != nullptr)
-		{
-			SetbObjectForPlacementIsSelected(true);
-			SetPlaceableObjectData(OutRow);
-		}
-		else
-			SetbObjectForPlacementIsSelected(false);
-	}
-	else
-		SetbObjectForPlacementIsSelected(false);
-	
-}
 
 
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LGetCellCenterToLocation
-  
-  @Summary:  Local Function for return grid cell Center to Location Vector
-  
-  @Args:     FIntPoint InCell
-  
-  @Returns:  FVector2D
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-FVector2D ABuildManager::GetCellCenterToLocation(FIntPoint InCell)
-{
-	float LocationX = FMath::Abs(InCell.X) * GetGridTileSize().X * FMath::Sign(InCell.X);
-	float LocationY = FMath::Abs(InCell.Y) * GetGridTileSize().Y * FMath::Sign(InCell.Y);
-	
-	return FVector2D(LocationX, LocationY);
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LRoundHeightToGridStep
-  
-  @Summary:  Local Function for return grid round height by tracing new height
-  
-  @Args:     float InNewHeight
-  
-  @Returns:  float
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-float ABuildManager::LRoundHeightToGridStep(float InNewHeight)
-{
-	if(UKismetMathLibrary::NearlyEqual_FloatFloat(GetVerticalStep(), 0.0f, 0.01f))
-	{
-		return InNewHeight;
-	}
-	else
-	{
-		return FMath::RoundToInt32(InNewHeight / GetVerticalStep()) * GetVerticalStep();
-	}
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LGetCenterOfRectangularArea
-
-  @Summary:  Get Cells'Center by the size of PlaceableObject's Objectsize.
-  
-  @Args:     FIntPoint CenterLocation, FIntPoint TileCount
-			 Object's OccupiedCenterCell, Object's count
-  
-  @Returns:  TArray<FIntPoint>
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-FVector2D ABuildManager::LGetCenterOfRectangularArea(FIntPoint AreaCenterCell, FIntPoint AreaSize)
-{
-	FVector2D LocationLOCAL = GetCellCenterToLocation(AreaCenterCell);
-	
-	float LocationCenterX = AreaSize.X % 2 == 0 ? LocationLOCAL.X - (GetGridTileSize().X * 0.5f) : LocationLOCAL.X;
-	float LocationCenterY = AreaSize.Y % 2 == 0 ? LocationLOCAL.Y - (GetGridTileSize().Y * 0.5f) : LocationLOCAL.Y;
-	
-	return FVector2D(LocationCenterX, LocationCenterY);
-}
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   LGetCellsinRectangularArea
-
-  @Summary:  Get Cells by the size of PlaceableObject's Objectsize.
-  
-  @Args:     FIntPoint CenterLocation, FIntPoint TileCount
-			 Object's OccupiedCenterCell, Object's count
-  
-  @Returns:  TArray<FIntPoint>
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-TArray<FIntPoint> ABuildManager::LGetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount)
-{
-	int32 CurrentCellX = 0;
-	int32 CurrentCellY = 0;
-	FIntPoint StartCellLOCAL = FIntPoint((CenterLocation.X-(TileCount.X/2)),(CenterLocation.Y-(TileCount.Y/2)));
-	TArray<FIntPoint> CellsLOCAL;
-	int32 count = 0;
-	for (int Index = 0; Index <= (TileCount.X) - 1; Index++)
-	{
-		CurrentCellX = StartCellLOCAL.X + Index;
-		for (int Index2 = 0; Index2 <= (TileCount.Y) - 1; Index2++)
-		{
-			CurrentCellY = StartCellLOCAL.Y + Index2;
-			CellsLOCAL.Add(FIntPoint(CurrentCellX, CurrentCellY));
-			count+=1;
-		}
-	}
-	return CellsLOCAL;
-}
 
 
 

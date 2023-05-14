@@ -21,6 +21,10 @@ public:
 
 	/* Delegate Instance */
 	FUpdateResourceAmount FUpdateResourceAmountEvent;
+
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UGridSystemComponent* GridSystemComponent;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -35,9 +39,6 @@ protected:
 public:
 	/* Main Functions */
 	UFUNCTION(BlueprintCallable, Category = "Main")
-	void BuildPlaceableObject();
-	
-	UFUNCTION(BlueprintCallable, Category = "Main")
 	void PressedLMB();
 
 	UFUNCTION(BlueprintCallable, Category = "Main")
@@ -51,72 +52,42 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Main")
 	void DeselectPlaceableObject();
-
-	UFUNCTION(BlueprintCallable, Category = "Main")
-	void CancelDragObjectPlacing();
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Main")
 	void DetectMouseDrag();
 
 	UFUNCTION(BlueprintCallable, Category = "Main")
 	void RotateObject(bool bLeft);
-	
-	/* GridSystem Functions */
-	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	void SpawnGrid(FVector CenterLocation, FVector TileSize, FIntPoint TileCount);
-	
-	UFUNCTION(BlueprintCallable, Category = "GridSystem")
+
+	/* Build Functions */
+	UFUNCTION(BlueprintCallable, Category = "Build")
+	void SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntPoint TileCount);
+
+	UFUNCTION(BlueprintCallable, Category = "Build")
+	void BuildPlaceableObject();
+
+	UFUNCTION(BlueprintCallable, Category = "Build")
 	void DrawPlacementIndicators();
 
-	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	FVector GetCellLocation(FIntPoint InCell, bool& bSuccess);
-	
-	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	FIntPoint GetCellfromWorldLocation(FVector Location);
+	UFUNCTION(BlueprintCallable, Category="Tool")
+	void DestorySelectedPlaceableObject();
 
+	
 	/* Data Functions */
 	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
 	bool CheckOccupancyData(FIntPoint Cell);
 	
 	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
 	void ChangeOccupancyData(FIntPoint Cell, bool IsOccupied);
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Data|Object")
 	void SetupObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
-
-
-	/* Tool Functions */
-	UFUNCTION(BlueprintCallable, Category="Tool")
-	void ActivateBuildingTool(FDataTableRowHandle ObjectforBuilding);
-
-	UFUNCTION(BlueprintCallable, Category="Tool")
-	void DeactivateBuildingTool();
-
-	UFUNCTION(BlueprintCallable, Category="Tool")
-	void ActivateDemolitionTool();
-
-	UFUNCTION(BlueprintCallable, Category="Tool")
-	void DeactivateDemolitionTool();
-
-	UFUNCTION(BlueprintCallable, Category="Tool")
-	void DestorySelectedPlaceableObject();
 	
 	/* Resource Functions */
 	UFUNCTION(BlueprintCallable, Category = "Resource")
 	void UpdateResourcesValue(FConstructionCost Resource, bool Add, bool Subtract);
 	
-	/* Public Getter & Setter */
-	FORCEINLINE const FVector GetGridCenterLocation() const { return GridCenterLocation; }
-	FORCEINLINE void SetGridCenterLocation(const FVector& InLocation) { GridCenterLocation = InLocation; }
 
-	FORCEINLINE FVector GetGridTileSize() const { return GridTileSize; }
-	FORCEINLINE void SetGridTileSize(const FVector& InGridTileSize) { GridTileSize = InGridTileSize; }
-
-	FORCEINLINE FIntPoint GetGridTileCount() const { return GridTileCount; }
-	FORCEINLINE void SetGridTileCount(const FIntPoint& InGridTileCount) { GridTileCount = InGridTileCount; }
-
-	FORCEINLINE bool GetbDemolitionToolEnabled() const { return bDemolitionToolEnabled; }
-	FORCEINLINE void SetbDemolitionToolEnabled(const bool& InDemolitionToolEnabled) { bDemolitionToolEnabled = InDemolitionToolEnabled; }
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -128,34 +99,10 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMesh* IndicatorMesh;
 
-	UPROPERTY(VisibleAnywhere)
-	UGridSystemComponent* GridSystemComponent;
 
 private:
-	FPlaceableObjectData* PlaceableObjectData;
 	
 	/* Settings Variables */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	FVector GridCenterLocation = FVector(0.0f, 0.0f, 0.0f);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	FVector GridTileSize = FVector(200.0f, 200.0f, 100.0f);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	FIntPoint GridTileCount = FIntPoint(3, 3);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	FVector GridBottomLeftCornerLocation = FVector(0.0f, 0.0f, 0.0f);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	float StartTraceHeight = 3000.0;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	float EndTraceHeight = -3000.0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	float VerticalStep;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FLinearColor PlayerOutlineColor = FLinearColor::Green;
 	
@@ -177,34 +124,6 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	float StartDragInstance;
 	
-	/* Interact Variables */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool bInteractStarted = false;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool bPlaceableObjectSelected = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool bDragStarted = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool bDragWasInterrupted = false;
-
-	/* Enabled Variables */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
-	bool bObjectForPlacementIsSelected = false;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
-	bool bBuildToolEnabled = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
-	bool bDemolitionToolEnabled = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
-	bool bPlacerIndicatorEnabled = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))
-	bool bBuildObjecEnabled = false;
 
 	/* Data Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
@@ -236,12 +155,6 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
 	APlaceableObjectBase* SelectedPlaceableObject;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
-	APlacerObjectBase* ActivePlacer;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
-	FDataTableRowHandle ObjectForPlacement;
-
 	/* UnderCursor Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UnderCursor", meta = (AllowPrivateAccess = "true"))
 	FVector LocationUnderCursorCamera;
@@ -251,10 +164,10 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UnderCursor", meta = (AllowPrivateAccess = "true"))
 	AActor* ActorUnderCursor;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UnderCursor", meta = (AllowPrivateAccess = "true"))
 	FIntPoint CellUnderCursor;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UnderCursor", meta = (AllowPrivateAccess = "true"))
 	FIntPoint LastCellUnderCursor;
 
@@ -263,68 +176,21 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UnderCursor", meta = (AllowPrivateAccess = "true"))
 	FVector StartLocationUnderCursor;
-	
-	/* Local Function Library */
-	FVector LSnapVectorToVector(FVector V1, FVector V2);
-	
-	float LSnapFlaotToFloat(float CurrentLocation, float GridSize);
-	
-	void LCalculateCenterandBottomLeft();
 
-	void LSetOutlineColor(int32 ObjectSide);
-	
-	void LChangeObjectforPlacement(FDataTableRowHandle NewObjectRow);
 
-	// Local Function about Get Grid's Information
-
-	FVector2D GetCellCenterToLocation(FIntPoint InCell);
-	
-	float LRoundHeightToGridStep(float InNewHeight);
-
-	FVector2D LGetCenterOfRectangularArea(FIntPoint AreaCenterCell, FIntPoint AreaSize);
-
-	TArray<FIntPoint> LGetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount);
-	
+	void SetOutlineColor(int32 ObjectSide);
 	// Resource Check
 	bool LCheckifEnoughResources(FConstructionCost InCost);
 
 	
 	/* Getter & Setter */
-	FORCEINLINE FVector GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
-	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation) { GridBottomLeftCornerLocation = InLocation; }
-
-	FORCEINLINE float GetStartTraceHeight() const { return StartTraceHeight; }
-	FORCEINLINE void SetStartTraceHeight(float InStartTraceHeight) { StartTraceHeight = InStartTraceHeight; }
-
-	FORCEINLINE float GetEndTraceHeight() const { return EndTraceHeight; }
-	FORCEINLINE void SetInEndTraceHeight(float InEndTraceHeight) { EndTraceHeight = InEndTraceHeight; }
-
-	FORCEINLINE float GetVerticalStep() const { return VerticalStep; }
-	FORCEINLINE void SetVerticalStep(float InVerticalStep) { VerticalStep = InVerticalStep; }
-
-	FORCEINLINE bool GetbObjectForPlacementIsSelected() const { return bObjectForPlacementIsSelected; }
-	FORCEINLINE void SetbObjectForPlacementIsSelected(bool InbObjectForPlacementIsSelected) { bObjectForPlacementIsSelected = InbObjectForPlacementIsSelected; }
-
-	FORCEINLINE bool GetbInteractStarted() const { return bInteractStarted; }
-	FORCEINLINE void SetbInteractStarted(const bool& InInteractStarted) { bInteractStarted = InInteractStarted; }
-
-	FORCEINLINE bool GetbBuildToolEnabled() const { return bBuildToolEnabled; }
-	FORCEINLINE void SetbBuildToolEnabled(const bool& InBuildToolEnabled) { bBuildToolEnabled = InBuildToolEnabled; }
-
-	FORCEINLINE bool GetbPlacerIndicatorEnabled() const { return bPlacerIndicatorEnabled; }
-	FORCEINLINE void SetbPlacerIndicatorEnabled(bool InbPlacerIndicatorEnabled) { bPlacerIndicatorEnabled =InbPlacerIndicatorEnabled; }
-
-	FORCEINLINE bool GetbBuildObjecEnabled() const { return bBuildObjecEnabled; }
-	FORCEINLINE void SetbBuildObjecEnabled(bool InbBuildObjecEnabled) { bBuildObjecEnabled = InbBuildObjecEnabled; }
 
 	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
 	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }
 
 	FORCEINLINE APlaceableObjectBase* GetSelectedPlaceableObject() const { return SelectedPlaceableObject; }
 	FORCEINLINE void SetSelectedPlaceableObject(APlaceableObjectBase* InSelectedPlaceableObject) { SelectedPlaceableObject = InSelectedPlaceableObject; }
-
-	FORCEINLINE bool GetbPlaceableObjectSelected() const { return bPlaceableObjectSelected; }
-	FORCEINLINE void SetbPlaceableObjectSelected(const bool& InPlaceableObjectSelected) { bPlaceableObjectSelected = InPlaceableObjectSelected; }
+	
 
 	FORCEINLINE TMap<FIntPoint, int32> GetOccupancyData() const { return OccupancyData; }
 	FORCEINLINE void SetOccupancyData(const TMap<FIntPoint, int32> InOccupancyData) { OccupancyData = InOccupancyData; }
@@ -349,21 +215,7 @@ private:
 
 	FORCEINLINE float GetStartDragInstance() const { return StartDragInstance; }
 	FORCEINLINE void SetStartDragInstance(float InStartDragInstance) { StartDragInstance= InStartDragInstance; }
-
-	FORCEINLINE bool GetbDragStarted() const { return bDragStarted; }
-	FORCEINLINE void SetbDragStarted(bool InbDragStarted) { bDragStarted = InbDragStarted; }
-
-	FORCEINLINE bool GetbDragWasInterrupted() const { return bDragWasInterrupted; }
-	FORCEINLINE void SetbDragWasInterrupted(bool InbDragWasInterrupted) { bDragWasInterrupted = InbDragWasInterrupted; }
-
-	FORCEINLINE APlacerObjectBase* GetActivePlacer() const { return ActivePlacer; }
-	FORCEINLINE void SetActivePlacer(APlacerObjectBase* InActivatePlacer) { ActivePlacer = InActivatePlacer; }
-
-	FORCEINLINE FDataTableRowHandle GetObjectForPlacement() const { return ObjectForPlacement; }
-	FORCEINLINE void SetObjectForPlacement(FDataTableRowHandle InObjectForPlacement) { ObjectForPlacement = InObjectForPlacement; }
-
-	FORCEINLINE FPlaceableObjectData* GetPlaceableObjectData() const { return PlaceableObjectData; }
-	FORCEINLINE void SetPlaceableObjectData(FPlaceableObjectData* InPlaceableObjectData) { PlaceableObjectData = InPlaceableObjectData; }
+	
 
 	FORCEINLINE FVector GetLocationUnderCursorCamera() const { return LocationUnderCursorCamera; }
 	FORCEINLINE void SetLocationUnderCursorCamera(FVector InLocationUnderCursorCamera) { LocationUnderCursorCamera = InLocationUnderCursorCamera; }
