@@ -221,7 +221,7 @@ void APlaceableObjectBase::SetupOutline()
   
   @Modifies: [bObjectSelected]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlaceableObjectBase::SetObjectSelectedMode(bool IsSelected) //선택모드
+void APlaceableObjectBase::SetObjectSelectedMode(bool IsSelected) //???ø??
 {
 	SetbObjectSelected(IsSelected);
 	if(GetbObjectSelected() == false)

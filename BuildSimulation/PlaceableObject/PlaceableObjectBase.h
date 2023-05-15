@@ -84,6 +84,9 @@ public:
 	FORCEINLINE FDataTableRowHandle GetObjectNameInTable() const { return ObjectNameInTable; }
 	FORCEINLINE void SetObjectNameInTable(FDataTableRowHandle InObjectNameInTable) { ObjectNameInTable = InObjectNameInTable; }
 
+	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
+	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
+
 private:
 	/* Local Function Library */
 	void LSwapObjectOutline(bool IsEnable);
@@ -134,8 +137,6 @@ private:
 	
 
 	/* Getter & Setter */
-	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
-	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
 
 	FORCEINLINE bool GetbOutlineEnabled() const { return bOutlineEnabled; }
 	FORCEINLINE void SetbOutlineEnabled(bool InOutlineEnabled) { bOutlineEnabled = InOutlineEnabled; }

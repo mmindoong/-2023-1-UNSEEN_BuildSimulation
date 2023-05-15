@@ -114,7 +114,6 @@ M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	FUpdateResourceAmountEvent.Unbind();
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -202,7 +201,7 @@ void ABuildManager::ReleasedLMB()
 		{
 			if(IsValid(GridSystemComponent->GetActivePlacer()))
 			{
-				if(LCheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost))
+				if(CheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost))
 				{
 					BuildPlaceableObject();
 				}
@@ -231,7 +230,8 @@ void ABuildManager::BuildPlaceableObject()
 	FVector SpawnLocation = FVector(SpawnCenterLocation.X , SpawnCenterLocation.Y, GetLocationUnderCursorCamera().Z);
 	FRotator SpawnRotator = FRotator(0.0f, 0.0f, 0.0f);
 	FActorSpawnParameters SpawnParams;
-
+	SpawnParams.Owner =this;
+	
 	if(GetWorld() && GridSystemComponent->GetbBuildObjecEnabled())
 	{
 		SetPlaceableObjectBase(Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(APlaceableObjectBase::StaticClass(), SpawnLocation, SpawnRotator, SpawnParams)));
@@ -246,6 +246,7 @@ void ABuildManager::BuildPlaceableObject()
 			// Object RowName, DynamicData 설정 후 Setting 진행
 			GetPlaceableObjectBase()->SetupPlaceableObject();
 		GetPlaceableObjectBase()->SetupOutline();
+		UpdateResourcesValue(GetPlaceableObjectBase()->GetObjectData()->ConstructionCost, false, true);
 	}
 
 	if(IsValid(GetPlaceableObjectBase()))
@@ -607,6 +608,12 @@ void ABuildManager::DestorySelectedPlaceableObject()
 	{
 		if(IsValid(GetSelectedPlaceableObject()))
 		{
+			FConstructionCost SelectedObjectData = GetSelectedPlaceableObject()->GetObjectData()->ConstructionCost;
+			int32 Percent =  GetSelectedPlaceableObject()->GetObjectData()->ReturnResourcesPercent;
+			FConstructionCost ReturnResources = FConstructionCost(SelectedObjectData.Gold * Percent / 100, FFoodData(SelectedObjectData.Food.Rice * Percent / 100,
+				SelectedObjectData.Food.Fruit * Percent / 100,SelectedObjectData.Food.Meat * Percent / 100),
+				SelectedObjectData.Wood * Percent / 100, SelectedObjectData.Rock * Percent / 100, SelectedObjectData.Iron * Percent / 100,SelectedObjectData.Coal * Percent / 100);
+			UpdateResourcesValue(ReturnResources, true, false);
 			for(FIntPoint cells : GetSelectedPlaceableObject()->OccupiedCells)
 			{
 				ChangeOccupancyData(cells, false);
@@ -674,14 +681,13 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 
 		SetPlayerResources(Construction);
 	}
-	/*
 	// Call Event Delegate
 	if(UpdateResourceAmountEvent.IsBound())
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Execute")));
 		UpdateResourceAmountEvent.Execute(GetPlayerResources());
 	}
-	*/
+	
 }
 
 
@@ -733,7 +739,7 @@ void ABuildManager::SetOutlineColor(int32 ObjectSide)
   
   @Returns:  bool
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-bool ABuildManager::LCheckifEnoughResources(FConstructionCost InCost)
+bool ABuildManager::CheckifEnoughResources(FConstructionCost InCost)
 {
 	return GetPlayerResources().Gold - InCost.Gold >= 0 && GetPlayerResources().Food.Fruit - InCost.Food.Fruit >=0 && GetPlayerResources().Food.Rice - InCost.Food.Rice >=0
 		&& GetPlayerResources().Food.Meat - InCost.Food.Meat >=0 && GetPlayerResources().Coal - InCost.Coal >= 0 && GetPlayerResources().Iron - InCost.Iron >= 0

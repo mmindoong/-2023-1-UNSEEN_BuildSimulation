@@ -228,7 +228,7 @@ M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::CreateIndicatorMesh(bool bPlaceEnabled)
 {
 	UMaterialInterface* MeshMaterial = bPlaceEnabled ? PlaceAcceptedMaterial : PlaceRejectedMaterial;
-	UStaticMeshComponent* NewComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass()); // Class로부터 불러오기, 매번 새로운 컴포넌트 생성
+	UStaticMeshComponent* NewComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass()); 
 	NewComponent->RegisterComponent();
 	NewComponent->SetupAttachment(ObjectMesh);
 	if(NewComponent->IsRegistered())

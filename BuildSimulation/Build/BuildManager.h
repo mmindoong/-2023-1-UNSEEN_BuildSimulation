@@ -9,7 +9,7 @@
 #include "BuildManager.generated.h"
 
 /* Delegate Declare */
-DECLARE_DELEGATE_TwoParams(FUpdateResourceAmount, FConstructionCost NewResourceAmout, bool IsEnoughResource);
+DECLARE_DELEGATE_OneParam(FUpdateResourceAmount, FConstructionCost NewResourceAmout);
 
 UCLASS()
 class BUILDSIMULATION_API ABuildManager : public AActor
@@ -20,8 +20,7 @@ public:
 	ABuildManager();
 
 	/* Delegate Instance */
-	FUpdateResourceAmount FUpdateResourceAmountEvent;
-
+	FUpdateResourceAmount UpdateResourceAmountEvent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UGridSystemComponent* GridSystemComponent;
@@ -180,7 +179,7 @@ private:
 
 	void SetOutlineColor(int32 ObjectSide);
 	// Resource Check
-	bool LCheckifEnoughResources(FConstructionCost InCost);
+	bool CheckifEnoughResources(FConstructionCost InCost);
 
 	
 	/* Getter & Setter */
