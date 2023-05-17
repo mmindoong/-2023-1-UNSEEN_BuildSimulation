@@ -19,3 +19,13 @@ void ABSPlayerController::BeginPlay()
 	bEnableMouseOverEvents= true;
 	bEnableTouchOverEvents = true;
 }
+
+void ABSPlayerController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+}
+
+
+
+
