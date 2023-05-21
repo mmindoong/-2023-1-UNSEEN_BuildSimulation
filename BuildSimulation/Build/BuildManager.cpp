@@ -43,6 +43,8 @@ ABuildManager::ABuildManager()
 		UE_LOG(LogTemp, Log, TEXT("[BuildManager] IndicatorMesh Asset Load"));
 		IndicatorMesh = IndicatorMeshAsset.Object;
 	}
+
+	
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -67,7 +69,7 @@ void ABuildManager::BeginPlay()
 		}
 	}
 	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	UpdateResourcesValue(FConstructionCost(2000, FFoodData(100,100,100), 100, 100, 100, 100), false, false);
+	UpdateResourcesValue(FConstructionCost(2000, FFoodData(1000,1000,1000), 1000, 1000, 1000, 1000), false, false);
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -323,6 +325,7 @@ void ABuildManager::UpdateBuildingManagerValues()
 	
 	FIntPoint Cell= GridSystemComponent->GetCellfromWorldLocation(GetLocationUnderCursorCamera());
 	SetCellUnderCursor(Cell);
+
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -504,6 +507,11 @@ void ABuildManager::DrawPlacementIndicators()
 {
 	if(GetbCellUnderCursorHasChanged())
 	{
+		if(IsValid(GridSystemComponent->GetActivePlacer()))
+		{
+			bool IsEnoughResource = CheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost);
+			GridSystemComponent->GetActivePlacer()->UpdateMeshMatDependingAmountOfResources(IsEnoughResource);	
+		}
 		GridSystemComponent->SetbBuildObjecEnabled(true);
 		// Set Placer Object Mesh's World Location
 		FVector2D CenterIndicators = GridSystemComponent->GetCenterOfRectangularArea(GetCellUnderCursor(), GridSystemComponent->GetActivePlacer()->GetObjectSize());
@@ -681,12 +689,13 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 
 		SetPlayerResources(Construction);
 	}
-	// Call Event Delegate
-	if(UpdateResourceAmountEvent.IsBound())
+
+	if(IsValid(GridSystemComponent->GetActivePlacer()))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Execute")));
-		UpdateResourceAmountEvent.Execute(GetPlayerResources());
+		bool IsEnoughResource = CheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost);
+		GridSystemComponent->GetActivePlacer()->UpdateMeshMatDependingAmountOfResources(IsEnoughResource);	
 	}
+	
 	
 }
 

@@ -24,6 +24,9 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UGridSystemComponent* GridSystemComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	TArray<FDataTableRowHandle> BuildingsAvailableForConstruction;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -122,7 +125,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	float StartDragInstance;
-	
 
 	/* Data Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))

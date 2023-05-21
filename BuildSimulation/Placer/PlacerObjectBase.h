@@ -22,9 +22,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	/* Delegate Event Dispatchers  */
-	UFUNCTION()
-	void CallUpdateResourceAmount(FConstructionCost NewResourceAmount, bool IsEnoughResource);
 
 public:	
 	// Called every frame
@@ -48,6 +45,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void CreateIndicatorMesh(bool bPlaceEnabled);
+
+	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
+	void UpdateMeshMatDependingAmountOfResources(bool bIsEnoughResource);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ObjectMesh;

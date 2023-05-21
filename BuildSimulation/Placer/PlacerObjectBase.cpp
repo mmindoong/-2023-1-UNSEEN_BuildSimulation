@@ -36,18 +36,21 @@ APlacerObjectBase::APlacerObjectBase()
 	
 	// Create ObjectMesh StaticMesh Component
 	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObjectMesh"));
-	ObjectMesh->SetupAttachment(RootComponent);
+	USceneComponent* DefaultRoot = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultRoot"));
+	SetRootComponent(DefaultRoot);
+	ObjectMesh->SetupAttachment(DefaultRoot);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Game/StarterContent/Shapes/Shape_Plane"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("/Game/GridAssets/Materials/Building_Indicators/MI_Building_Accepted"));
 	if (MeshAsset.Succeeded())
 	{
 		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] ObjectMesh Asset Load"));
 		ObjectMesh->SetStaticMesh(MeshAsset.Object);
-		ObjectMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
+		//ObjectMesh->SetCollisionProfileName(FName("NoCollision"));
 		if(MaterialAsset.Succeeded())
 		{
 			ObjectMesh->SetMaterial(0, MaterialAsset.Object);
 		}
+		
 	}
 	
 	// Material Asset Defualt Value
@@ -89,22 +92,6 @@ void APlacerObjectBase::BeginPlay()
 	
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   CallUpdateResourceAmount
-  
-  @Category: Custom Event
-  
-  @Summary:  This event will be called every time the number of resources in the Build Manager is updated.
-  
-  @Args:     FConstructionCost NewResourceAmout
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::CallUpdateResourceAmount(FConstructionCost NewResourceAmount, bool IsEnoughResource)
-{
-	if(IsEnoughResource)
-		ObjectMesh->SetMaterial(0, BuildingAcceptedMaterial);
-	else
-		ObjectMesh->SetMaterial(0, BuildingRejectedMaterial);
-}
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   Tick
@@ -141,6 +128,14 @@ void APlacerObjectBase::SetupObjectPlacer()
 		SetPlaceableObjectClass(GetObjectData()->PlacaebleObjectClass);
 		SetObjectSize(FIntPoint(FMath::Clamp<int32>(GetObjectData()->ObjectSize.X, 1, GetObjectData()->ObjectSize.X),
 			FMath::Clamp<int32>(GetObjectData()->ObjectSize.Y, 1, GetObjectData()->ObjectSize.Y)));
+		ObjectMesh->SetStaticMesh(ObjectData->Mesh);
+		
+		for(int i =0; i < ObjectData->Mesh->GetNumSections(0); i++)
+		{
+			ObjectMesh->SetMaterial( i, BuildingAcceptedMaterial);
+		}
+		ObjectMesh->SetCollisionProfileName(FName("NoCollision"));
+		
 		
 	}
 	
@@ -230,7 +225,7 @@ void APlacerObjectBase::CreateIndicatorMesh(bool bPlaceEnabled)
 	UMaterialInterface* MeshMaterial = bPlaceEnabled ? PlaceAcceptedMaterial : PlaceRejectedMaterial;
 	UStaticMeshComponent* NewComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass()); 
 	NewComponent->RegisterComponent();
-	NewComponent->SetupAttachment(ObjectMesh);
+	
 	if(NewComponent->IsRegistered())
 	{
 		NewComponent->SetStaticMesh(IndicatorMesh);
@@ -240,6 +235,25 @@ void APlacerObjectBase::CreateIndicatorMesh(bool bPlaceEnabled)
 		
 	}
 	
+}
+
+void APlacerObjectBase::UpdateMeshMatDependingAmountOfResources(bool bIsEnoughResource)
+{
+	if(bIsEnoughResource)
+	{
+		for(int i =0; i < ObjectData->Mesh->GetNumSections(0); i++)
+		{
+			ObjectMesh->SetMaterial( i, BuildingAcceptedMaterial);
+		}
+		
+	}
+	else
+	{
+		for(int i =0; i < ObjectData->Mesh->GetNumSections(0); i++)
+		{
+			ObjectMesh->SetMaterial( i, BuildingRejectedMaterial);
+		}
+	}
 }
 
 
