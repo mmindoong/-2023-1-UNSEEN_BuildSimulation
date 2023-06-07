@@ -86,7 +86,7 @@ void ABuildManager::Tick(float DeltaTime)
 	if(GridSystemComponent->GetbBuildToolEnabled() || GridSystemComponent->GetbDemolitionToolEnabled())
 	{
 		UpdateBuildingManagerValues();
-		if(GridSystemComponent->GetbPlacerIndicatorEnabled() && GridSystemComponent->GetbPlaceableObjectSelected() == false)
+		if(GridSystemComponent->GetbPlacerIndicatorEnabled() && GridSystemComponent->GetbPlaceableObjectSelected() == false )
 		{
 			DrawPlacementIndicators();
 		}
@@ -458,39 +458,133 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 
 	// Find the bottom left corner of our grid and Center grid, to start spawning tiles from there.
 	GridSystemComponent->CalculateCenterandBottomLeft();
-
-	for (int Index = 0; Index <= GridSystemComponent->GetGridTileCount().X - 1; Index++)
+	
+	for (int X = 0; X < GridSystemComponent->GetGridTileCount().X - 1; X += 8)
 	{
-		int X = Index;
-
-		for (int Index2 = 0; Index2 <= GridSystemComponent->GetGridTileCount().Y - 1; Index2++)
+		for (int  Y = 0;  Y < GridSystemComponent->GetGridTileCount().Y - 1;  Y += 8)
 		{
-			int Y = Index2;
-
-			// Find the Tile transform based on it's index (X,Y) and the variables we defined before.
-			FVector TileTransformLocation = GridSystemComponent->GetGridBottomLeftCornerLocation() + FVector(0.0f, 0.0f, 2.0f) + GridSystemComponent->GetGridTileSize() * FVector((float)X, (float)Y, 0.0f);
-			// Mesh Size
-			FVector TileTransformScale = GridSystemComponent->GetGridTileSize() / FVector(100.0f, 100.0f, 100.0f);
-			FTransform TileTransform;
-			TileTransform.SetLocation(TileTransformLocation);
-			TileTransform.SetScale3D(TileTransformScale);
-			// Add Instanced Static Mesh
-			int32 InstanceIndex = InstancedStaticMeshComponent->AddInstance(TileTransform, true);
-			
+			// 0 : 녹색, 1: 노랑, 2: 빨강
+			int32 ColorIncludedRed = FMath::RandRange(0, 2);
+			int32 ColorExcludedRed = FMath::RandRange(0, 1);
 			bool isRColor = FMath::RandBool();
-			float ReturnRValue = isRColor ? 1.0f : 0.0f;
-			// SetCustomDataValue - R Parameter
-			InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, ReturnRValue);
-			// Get a random element from the array
-			TArray<float> FloatArray = { 0.5f, 1.0f };
-			float RandomElement = FloatArray[FMath::RandRange(0, FloatArray.Num() - 1)];
-			float ReturnGValue = isRColor ? RandomElement : 1.0f;
-			// SetCustomDataValue - G Parameter
-			InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 1, ReturnGValue);
-			// SetCustomDataValue - B Parameter
-			InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 2, 0.0f);
+			int32 BackGroundColor = isRColor ? ColorIncludedRed : ColorExcludedRed;
+			int32 SelectedArr[8][8] = { 0 };
+
+			// 패턴의 색상 조합
+			int32 pattern1[8][8] = {
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, 1, 1, 1, 1},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, 1, 1, 1, 1},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, 1, 1, 1, 1},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, 1, 1, 1, 1},
+				{0, 0, 0, 0, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor},
+				{0, 0, 0, 0, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor},
+				{0, 0, 0, 0, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor},
+				{0, 0, 0, 0, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor}
+			};
+
+			// 패턴의 색상 조합
+			int32 pattern2[8][8] = {
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor,},
+				{BackGroundColor, 0, 0, 0, 0, 0, 0, BackGroundColor,},
+				{BackGroundColor, 0, 0, 0, 0, 0, 0, BackGroundColor,},
+				{BackGroundColor, 0, 0, 0, 0, 0, 0, BackGroundColor,},
+				{BackGroundColor, 0, 0, 0, 0, 0, 0, BackGroundColor},
+				{BackGroundColor, 0, 0, 0, 0, 0, 0, BackGroundColor},
+				{BackGroundColor, 0, 0, 0, 0, 0, 0, BackGroundColor},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor}
+			};
+
+			int32 pattern3[8][8] = {
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor,},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor,},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor,},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor,},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor},
+				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor}
+			};
+			int32 RanArray = FMath::RandRange(1, 3);
+			for(int x =0; x <8; x++)
+			{
+				for(int y = 0; y < 8; y++)
+				{
+					if(RanArray == 1)
+						SelectedArr[x][y] = pattern1[x][y];
+					else if(RanArray == 2)
+						SelectedArr[x][y] = pattern2[x][y];
+					else if(RanArray == 3)
+						SelectedArr[x][y] = pattern3[x][y];
+				}
+			}
+			
+			int x = -1;
+			for(int i = X; i <= X + 7; i++ )
+			{
+				x++;
+				int y = -1;
+				for(int j = Y; j <= Y + 7; j++)
+				{
+					y++;
+					// Find the Tile transform based on it's index (X,Y) and the variables we defined before.
+					FVector TileTransformLocation = GridSystemComponent->GetGridBottomLeftCornerLocation() + FVector(0.0f, 0.0f, 2.0f) + GridSystemComponent->GetGridTileSize() * FVector((float)i, (float)j, 0.0f);
+					// Mesh Size
+					FVector TileTransformScale = GridSystemComponent->GetGridTileSize() / FVector(100.0f, 100.0f, 100.0f);
+					FTransform TileTransform;
+					TileTransform.SetLocation(TileTransformLocation);
+					TileTransform.SetScale3D(TileTransformScale);
+					// Add Instanced Static Mesh
+					int32 InstanceIndex = InstancedStaticMeshComponent->AddInstance(TileTransform, true);
+					
+					if(SelectedArr[x][y] == 0)
+					{
+						// 녹색
+						// SetCustomDataValue - R Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, 0.0f);
+						// SetCustomDataValue - G Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 1, 1.0f);
+						// SetCustomDataValue - B Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 2, 0.0f);
+						FIntPoint GetTileMapCells = GridSystemComponent->GetCellfromWorldLocation(TileTransform.GetLocation());
+						SetupTileMapData(GetTileMapCells, 0);
+						
+					}
+					else if(SelectedArr[x][y] == 1)
+					{
+						
+						// 노란색
+						// SetCustomDataValue - R Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, 1.0f);
+						// SetCustomDataValue - G Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 1, 1.0f);
+						// SetCustomDataValue - B Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 2, 0.0f);
+						FIntPoint GetTileMapCells = GridSystemComponent->GetCellfromWorldLocation(TileTransform.GetLocation());
+						SetupTileMapData(GetTileMapCells, 1);
+						
+					}
+					else if(SelectedArr[x][y] == 2)
+					{
+						
+						// 빨간색
+						// SetCustomDataValue - R Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, 1.0f);
+						// SetCustomDataValue - G Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 1, 0.0f);
+						// SetCustomDataValue - B Parameter
+						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 2, 0.0f);
+						FIntPoint GetTileMapCells = GridSystemComponent->GetCellfromWorldLocation(TileTransform.GetLocation());
+						SetupTileMapData(GetTileMapCells, 2);
+						
+					}
+					
+				}
+			}
+			
+			
 		}
 	}
+	
 }
 
 
@@ -520,18 +614,19 @@ void ABuildManager::DrawPlacementIndicators()
 		float BaseBuildLocationLOCAL = CellLocation.Z;
 		GridSystemComponent->GetActivePlacer()->ObjectMesh->SetWorldLocation(FVector(CenterIndicators.X, CenterIndicators.Y, BaseBuildLocationLOCAL));
 		TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GetCellUnderCursor(), GridSystemComponent->GetActivePlacer()->GetObjectSize());
+		int SuccessCount = 0;
 		for (int32 Index = 0; Index != CellsforBuild.Num(); Index++)
 		{
 			bool bSuccessforIndicators = false;
 			FVector CellLocationLOCAL = GridSystemComponent->GetCellLocation(CellsforBuild[Index], GetLocationUnderCursorCamera(),bSuccessforIndicators);
 			GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetWorldLocation(CellLocationLOCAL);
-
-			if(bSuccessforIndicators)
+			
+			if(bSuccessforIndicators && CheckTileMapData(CellsforBuild[Index]) )
 			{
+				SuccessCount++;
 				// 해당 공간에 각 Indicator Cell들을 놓을 수 있는지
 				if(CheckOccupancyData(CellsforBuild[Index])==false)
 				{
-					
 					GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceAcceptedMaterial);
 				}
 				else
@@ -539,6 +634,11 @@ void ABuildManager::DrawPlacementIndicators()
 					GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceRejectedMaterial);
 					GridSystemComponent->SetbBuildObjecEnabled(false);
 				}	
+			}
+			else // Ground 충돌 감지 못한 경우
+			{
+				GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceRejectedMaterial);
+				GridSystemComponent->SetbBuildObjecEnabled(false);
 			}
 		}
 	}
@@ -588,6 +688,25 @@ void ABuildManager::ChangeOccupancyData(FIntPoint Cell, bool IsOccupied)
 		}
 	}
 }
+
+void ABuildManager::SetupTileMapData(FIntPoint Cell, int32 InSoil)
+{
+	TileMapData.Add(Cell, InSoil);
+}
+
+bool ABuildManager::CheckTileMapData(FIntPoint Cell)
+{
+	if (TileMapData.Contains(Cell))
+	{
+		// Retrieve the value associated with the key
+		const int32& Value = TileMapData[Cell];
+		if(Value == 2)
+			return false;
+	}
+	
+	return true;
+}
+
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SetupObjectData

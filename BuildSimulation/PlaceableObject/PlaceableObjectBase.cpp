@@ -32,6 +32,7 @@ APlaceableObjectBase::APlaceableObjectBase()
 	
 	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
 	ObjectMesh->SetupAttachment(RootComponent);
+	ObjectMesh->SetCollisionProfileName("BlockAll"); // WorldStatic Obejct
 	
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/Low_Poly_Viking_World/Models/Constructions/SM_House_01_A"));
 	if (SphereVisualAsset.Succeeded())

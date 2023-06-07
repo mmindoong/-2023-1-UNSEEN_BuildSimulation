@@ -81,6 +81,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
 	void ChangeOccupancyData(FIntPoint Cell, bool IsOccupied);
+
+	UFUNCTION(BlueprintCallable, Category = "Data|TileMap")
+	void SetupTileMapData(FIntPoint Cell, int32 InSoil);
+
+	UFUNCTION(BlueprintCallable, Category = "Data|TileMap")
+	bool CheckTileMapData(FIntPoint Cell);
 	
 	UFUNCTION(BlueprintCallable, Category = "Data|Object")
 	void SetupObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
@@ -130,6 +136,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
 	TMap<FIntPoint, int32> OccupancyData;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
+	TMap<FIntPoint, int32> TileMapData;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
 	TMap<FIntPoint, APlaceableObjectBase*> ObjectData;
 
@@ -192,9 +201,11 @@ private:
 	FORCEINLINE APlaceableObjectBase* GetSelectedPlaceableObject() const { return SelectedPlaceableObject; }
 	FORCEINLINE void SetSelectedPlaceableObject(APlaceableObjectBase* InSelectedPlaceableObject) { SelectedPlaceableObject = InSelectedPlaceableObject; }
 	
-
 	FORCEINLINE TMap<FIntPoint, int32> GetOccupancyData() const { return OccupancyData; }
 	FORCEINLINE void SetOccupancyData(const TMap<FIntPoint, int32> InOccupancyData) { OccupancyData = InOccupancyData; }
+
+	FORCEINLINE TMap<FIntPoint, int32> GetTileMapData() const { return TileMapData; }
+	FORCEINLINE void SetTileMapData(const TMap<FIntPoint, int32> InTileMapData) { TileMapData = InTileMapData; }
 
 	FORCEINLINE TMap<FIntPoint, APlaceableObjectBase*> GetObjectData() const { return ObjectData; }
 	FORCEINLINE void SetObjectData(const TMap<FIntPoint, APlaceableObjectBase*> InObjectData) { ObjectData = InObjectData; }
@@ -216,7 +227,6 @@ private:
 
 	FORCEINLINE float GetStartDragInstance() const { return StartDragInstance; }
 	FORCEINLINE void SetStartDragInstance(float InStartDragInstance) { StartDragInstance= InStartDragInstance; }
-	
 
 	FORCEINLINE FVector GetLocationUnderCursorCamera() const { return LocationUnderCursorCamera; }
 	FORCEINLINE void SetLocationUnderCursorCamera(FVector InLocationUnderCursorCamera) { LocationUnderCursorCamera = InLocationUnderCursorCamera; }

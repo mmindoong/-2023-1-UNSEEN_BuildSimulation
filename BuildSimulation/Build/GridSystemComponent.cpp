@@ -52,20 +52,30 @@ FVector UGridSystemComponent::GetCellLocation(FIntPoint InCell, FVector InCamera
 	FVector StartLocation = FVector(LocationLOCAL.X, LocationLOCAL.Y, GetStartTraceHeight() + InCameraLocation.Z);
 	FVector EndLocation =  FVector(LocationLOCAL.X, LocationLOCAL.Y, GetEndTraceHeight() + InCameraLocation.Z);
 	TArray<AActor*> ActorsToIgnore;
+	FCollisionQueryParams Params;
 
+	/*
+	bool IsHitResult = GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		StartLocation,
+		EndLocation,
+		ECC_GameTraceChannel1,
+		Params);
+	*/
 	bool IsHitResult = UKismetSystemLibrary::LineTraceSingle(
 		GetWorld(),
 		StartLocation,
 		EndLocation,
-		TraceTypeQuery1,
+		UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel1),
 		false,
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
+		EDrawDebugTrace::ForDuration,
 		HitResult,
 		true,
 		FLinearColor::Red,
 		FLinearColor::Green,
 		0.5f);
+		
 	if(IsHitResult == true)
 	{
 		float RoundHeight = RoundHeightToGridStep(HitResult.Location.Z);
@@ -75,7 +85,6 @@ FVector UGridSystemComponent::GetCellLocation(FIntPoint InCell, FVector InCamera
 	}
 	bSuccess = false;
 	return LocationLOCAL;	
-	
 }
 
 
