@@ -10,6 +10,7 @@
 
 /* Delegate Declare */
 DECLARE_DELEGATE_OneParam(FUpdateResourceAmount, FConstructionCost NewResourceAmout);
+DECLARE_DELEGATE(FBuildNotEnoughResource);
 
 UCLASS()
 class BUILDSIMULATION_API ABuildManager : public AActor
@@ -21,6 +22,8 @@ public:
 
 	/* Delegate Instance */
 	FUpdateResourceAmount UpdateResourceAmountEvent;
+	
+	FBuildNotEnoughResource BuildNotEnoughResourceEvent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UGridSystemComponent* GridSystemComponent;

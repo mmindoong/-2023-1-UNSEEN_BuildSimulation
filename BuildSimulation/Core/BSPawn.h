@@ -72,7 +72,7 @@ private:
 	float CameraMinZoom = 200.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Setting, Meta = (AllowPrivateAccess = "true"))
-	float CameraMaxZoom = 20000.0f;
+	float CameraMaxZoom = 40000.0f;
 
 	// Getter & Setter
 	FORCEINLINE float GetRotationSpeed() const { return RotationSpeed; }

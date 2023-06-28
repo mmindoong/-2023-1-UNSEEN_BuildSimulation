@@ -21,27 +21,18 @@ APlaceableObjectBase::APlaceableObjectBase()
 	if(DT_OBJECTDATA.Succeeded())
 	{
 		PlaceableObjectTable = DT_OBJECTDATA.Object;
-		check(PlaceableObjectTable->GetRowMap().Num() > 0);
+		//check(PlaceableObjectTable->GetRowMap().Num() > 0);
 		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] DT_ObjectData Asset Load"));
 	}
 	// Set DataTableRowHandle Defualt value
 	FDataTableRowHandle InObjectNameInTable;
 	InObjectNameInTable.DataTable = PlaceableObjectTable;
-	InObjectNameInTable.RowName = FName("House");
+	InObjectNameInTable.RowName = FName("Default");
 	SetObjectNameInTable(InObjectNameInTable);
 	
 	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
 	ObjectMesh->SetupAttachment(RootComponent);
 	ObjectMesh->SetCollisionProfileName("BlockAll"); // WorldStatic Obejct
-	
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/Game/Low_Poly_Viking_World/Models/Constructions/SM_House_01_A"));
-	if (SphereVisualAsset.Succeeded())
-	{
-		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] SphereVisualAsset Asset Load"));
-		ObjectMesh->SetStaticMesh(SphereVisualAsset.Object);
-		ObjectMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 150.0f));
-		ObjectMesh->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
-	}
 	
 }
 
@@ -151,7 +142,7 @@ void APlaceableObjectBase::SetupPlaceableObject()
 	if (OutRow != nullptr)
 	{
 		// Set OutRow -> MaxHP, HP, BorderEnbaled, OutlineEnabled, HPBarEnabled
-		ObjectMesh->SetStaticMesh(OutRow->Mesh);
+		ObjectMesh->SetStaticMesh(OutRow->ProceedingMesh);
 		SetObjectData(OutRow);
 		SetObjectSize(GetObjectData()->ObjectSize);
 		SetMaxHP(GetObjectData()->HealthPoints);
@@ -279,6 +270,14 @@ void APlaceableObjectBase::DemolitionPlaceableObject()
 	//todo : Set Occupancy Data in BuildManager before object is Destroy
 	K2_DestroyActor();
 }
+
+bool APlaceableObjectBase::BuildCompleted()
+{
+	ObjectMesh->SetStaticMesh(GetObjectData()->Mesh);
+
+	return true;
+}
+
 
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

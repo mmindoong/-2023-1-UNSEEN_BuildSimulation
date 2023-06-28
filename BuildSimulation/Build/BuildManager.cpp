@@ -69,7 +69,7 @@ void ABuildManager::BeginPlay()
 		}
 	}
 	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	UpdateResourcesValue(FConstructionCost(2000, FFoodData(1000,1000,1000), 1000, 1000, 1000, 1000), false, false);
+	UpdateResourcesValue(FConstructionCost(2000, FFoodData(1000,1000,1000), 1000, 1000, 1000, 1000, FCitizen()), false, false);
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -236,20 +236,23 @@ void ABuildManager::BuildPlaceableObject()
 	
 	if(GetWorld() && GridSystemComponent->GetbBuildObjecEnabled())
 	{
-		SetPlaceableObjectBase(Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(APlaceableObjectBase::StaticClass(), SpawnLocation, SpawnRotator, SpawnParams)));
+		// DT에 저장되어 있는 Object 자식 클래스로 호출
+		SetPlaceableObjectBase(Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(GridSystemComponent->GetActivePlacer()->GetObjectData()->PlacaebleObjectClass, SpawnLocation, SpawnRotator, SpawnParams)));
 		FDataTableRowHandle NewOjectDataRow;
-		NewOjectDataRow.DataTable = GetPlaceableObjectBase()->GetObjectNameInTable().DataTable;
-			NewOjectDataRow.RowName =  GridSystemComponent->GetActivePlacer()->GetObjectNameInTable().RowName;
-			GetPlaceableObjectBase()->SetObjectNameInTable(NewOjectDataRow);
-			//DynamicObject 구조체 PlaceableObject 생성시 설정
-			FDynamicPlaceableObjectData ObjectDynamicData = FDynamicPlaceableObjectData(true, GetCellUnderCursor(),GridSystemComponent->GetActivePlacer()->GetBuildDirection(), 0.0f, 0.0f);
-			GetPlaceableObjectBase()->SetObjectDynamicData(ObjectDynamicData);
+		NewOjectDataRow.DataTable =GridSystemComponent->GetActivePlacer()->GetObjectNameInTable().DataTable;
+		NewOjectDataRow.RowName =  GridSystemComponent->GetActivePlacer()->GetObjectNameInTable().RowName;
+		//GetPlaceableObjectBase()->GetObjectData()->PlacaebleObjectClass
+		GetPlaceableObjectBase()->SetObjectNameInTable(NewOjectDataRow);
+		//DynamicObject 구조체 PlaceableObject 생성시 설정
+		FDynamicPlaceableObjectData ObjectDynamicData = FDynamicPlaceableObjectData(true, GetCellUnderCursor(),GridSystemComponent->GetActivePlacer()->GetBuildDirection(), 0.0f, 0.0f);
+		GetPlaceableObjectBase()->SetObjectDynamicData(ObjectDynamicData);
 
-			// Object RowName, DynamicData 설정 후 Setting 진행
-			GetPlaceableObjectBase()->SetupPlaceableObject();
+		// Object RowName, DynamicData 설정 후 Setting 진행
+		GetPlaceableObjectBase()->SetupPlaceableObject();
 		GetPlaceableObjectBase()->SetupOutline();
 		UpdateResourcesValue(GetPlaceableObjectBase()->GetObjectData()->ConstructionCost, false, true);
 	}
+	
 
 	if(IsValid(GetPlaceableObjectBase()))
 	{
@@ -739,7 +742,9 @@ void ABuildManager::DestorySelectedPlaceableObject()
 			int32 Percent =  GetSelectedPlaceableObject()->GetObjectData()->ReturnResourcesPercent;
 			FConstructionCost ReturnResources = FConstructionCost(SelectedObjectData.Gold * Percent / 100, FFoodData(SelectedObjectData.Food.Rice * Percent / 100,
 				SelectedObjectData.Food.Fruit * Percent / 100,SelectedObjectData.Food.Meat * Percent / 100),
-				SelectedObjectData.Wood * Percent / 100, SelectedObjectData.Rock * Percent / 100, SelectedObjectData.Iron * Percent / 100,SelectedObjectData.Coal * Percent / 100);
+				SelectedObjectData.Wood * Percent / 100, SelectedObjectData.Rock * Percent / 100, SelectedObjectData.Iron * Percent / 100,SelectedObjectData.Coal * Percent / 100,
+				FCitizen(SelectedObjectData.Citizen.TotalNum * Percent / 100, SelectedObjectData.Citizen.UsedNum * Percent / 100 , SelectedObjectData.Citizen.Happiness * Percent / 100, SelectedObjectData.Citizen.Health * Percent / 100)
+				);
 			UpdateResourcesValue(ReturnResources, true, false);
 			for(FIntPoint cells : GetSelectedPlaceableObject()->OccupiedCells)
 			{
@@ -769,12 +774,18 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 		FFoodData AddFood = FFoodData(GetPlayerResources().Food.Rice+Resource.Food.Rice,
 			GetPlayerResources().Food.Fruit+ Resource.Food.Fruit,
 			GetPlayerResources().Food.Meat+ Resource.Food.Meat);
+		FCitizen AddCitizen = FCitizen(GetPlayerResources().Citizen.TotalNum + Resource.Citizen.TotalNum,
+			GetPlayerResources().Citizen.UsedNum - Resource.Citizen.UsedNum,
+			GetPlayerResources().Citizen.Happiness + Resource.Citizen.Happiness,
+				GetPlayerResources().Citizen.Health + Resource.Citizen.Health);
+
 		FConstructionCost AddConstruction = FConstructionCost(GetPlayerResources().Gold+Resource.Gold,
 			AddFood,
 			GetPlayerResources().Wood+Resource.Wood,
 			GetPlayerResources().Rock+Resource.Rock,
 			GetPlayerResources().Iron+Resource.Iron,
-			GetPlayerResources().Coal+Resource.Coal);
+			GetPlayerResources().Coal+Resource.Coal,
+			AddCitizen);
 		
 		SetPlayerResources(AddConstruction);
 	}
@@ -783,13 +794,18 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 		FFoodData SubFood = FFoodData(FMath::Clamp(GetPlayerResources().Food.Rice-Resource.Food.Rice,0,GetPlayerResources().Food.Rice-Resource.Food.Rice),
 		FMath::Clamp(GetPlayerResources().Food.Fruit-Resource.Food.Fruit,0,GetPlayerResources().Food.Fruit-Resource.Food.Fruit),
 		FMath::Clamp(GetPlayerResources().Food.Meat-Resource.Food.Meat,0,GetPlayerResources().Food.Meat-Resource.Food.Meat));
-
+		FCitizen SubCitizon = FCitizen(FMath::Clamp(GetPlayerResources().Citizen.TotalNum - Resource.Citizen.TotalNum,0,GetPlayerResources().Citizen.TotalNum - Resource.Citizen.TotalNum),
+		FMath::Clamp(GetPlayerResources().Citizen.UsedNum + Resource.Citizen.UsedNum,0,GetPlayerResources().Citizen.UsedNum + Resource.Citizen.UsedNum),
+			FMath::Clamp(GetPlayerResources().Citizen.Happiness - Resource.Citizen.Happiness,0,GetPlayerResources().Citizen.Happiness - Resource.Citizen.Happiness),
+			FMath::Clamp(GetPlayerResources().Citizen.Health - Resource.Citizen.Health,0,GetPlayerResources().Citizen.Health - Resource.Citizen.Health));
+		
 		FConstructionCost SubConstruction = FConstructionCost(FMath::Clamp(GetPlayerResources().Gold-Resource.Gold, 0 , GetPlayerResources().Gold-Resource.Gold),
 			SubFood,
 			FMath::Clamp(GetPlayerResources().Wood-Resource.Wood, 0 , GetPlayerResources().Wood-Resource.Wood),
 			FMath::Clamp(GetPlayerResources().Rock-Resource.Rock, 0 , GetPlayerResources().Rock-Resource.Rock),
 			FMath::Clamp(GetPlayerResources().Iron-Resource.Iron, 0 , GetPlayerResources().Iron-Resource.Iron),
-			FMath::Clamp(GetPlayerResources().Coal-Resource.Coal, 0 , GetPlayerResources().Coal-Resource.Coal));
+			FMath::Clamp(GetPlayerResources().Coal-Resource.Coal, 0 , GetPlayerResources().Coal-Resource.Coal),
+			SubCitizon);
 
 		SetPlayerResources(SubConstruction);
 	}
@@ -798,13 +814,18 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 		FFoodData Food = FFoodData(FMath::Clamp(Resource.Food.Rice,0,Resource.Food.Rice),
 		FMath::Clamp(Resource.Food.Fruit,0,Resource.Food.Fruit),
 		FMath::Clamp(Resource.Food.Meat,0,Resource.Food.Meat));
+		FCitizen Citizen = FCitizen(FMath::Clamp(Resource.Citizen.TotalNum,0,Resource.Citizen.TotalNum),
+		FMath::Clamp(Resource.Citizen.UsedNum,0,Resource.Citizen.UsedNum),
+			FMath::Clamp(Resource.Citizen.Happiness,0,Resource.Citizen.Happiness),
+			FMath::Clamp(Resource.Citizen.Health,0,Resource.Citizen.Health));
 		
 		FConstructionCost Construction = FConstructionCost(FMath::Clamp(Resource.Gold, 0, Resource.Gold),
-			Food,
+			Food,	
 		FMath::Clamp(Resource.Wood, 0, Resource.Wood),
 		FMath::Clamp(Resource.Rock, 0, Resource.Rock),
 		FMath::Clamp(Resource.Iron, 0, Resource.Iron),
-		FMath::Clamp(Resource.Coal, 0, Resource.Coal));
+		FMath::Clamp(Resource.Coal, 0, Resource.Coal),
+			Citizen);
 
 		SetPlayerResources(Construction);
 	}
@@ -871,7 +892,8 @@ bool ABuildManager::CheckifEnoughResources(FConstructionCost InCost)
 {
 	return GetPlayerResources().Gold - InCost.Gold >= 0 && GetPlayerResources().Food.Fruit - InCost.Food.Fruit >=0 && GetPlayerResources().Food.Rice - InCost.Food.Rice >=0
 		&& GetPlayerResources().Food.Meat - InCost.Food.Meat >=0 && GetPlayerResources().Coal - InCost.Coal >= 0 && GetPlayerResources().Iron - InCost.Iron >= 0
-		&& GetPlayerResources().Rock - InCost.Rock >=0 && GetPlayerResources().Wood - InCost.Wood >=0;
+		&& GetPlayerResources().Rock - InCost.Rock >=0 && GetPlayerResources().Wood - InCost.Wood >=0
+		&& (GetPlayerResources().Citizen.TotalNum- GetPlayerResources().Citizen.UsedNum) -  InCost.Citizen.UsedNum >= 0;
 }
 
 

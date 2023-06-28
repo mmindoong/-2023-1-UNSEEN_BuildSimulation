@@ -49,13 +49,16 @@ public:
 	void SetupOutline();
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
-	void SetObjectSelectedMode(bool IsSelected);
+	virtual void SetObjectSelectedMode(bool IsSelected);
 	
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void SwapObjectHighlighting(bool IsEnable);
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void DemolitionPlaceableObject();
+
+	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
+	virtual bool BuildCompleted();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ObjectMesh;
@@ -68,6 +71,19 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
 	TArray<FIntPoint> OccupiedCells;
+
+	/* Facility  Variables */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
+	float ManPower = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
+	FConstructionCost InputResource;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
+	FConstructionCost OutputResource;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
+	bool IsManArrived;
 	
 	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
 	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }
@@ -90,7 +106,7 @@ public:
 private:
 	/* Local Function Library */
 	void LSwapObjectOutline(bool IsEnable);
-	
+
 	FPlaceableObjectData* ObjectData;
 
 	/* Setting Variables */
@@ -137,7 +153,6 @@ private:
 	
 
 	/* Getter & Setter */
-
 	FORCEINLINE bool GetbOutlineEnabled() const { return bOutlineEnabled; }
 	FORCEINLINE void SetbOutlineEnabled(bool InOutlineEnabled) { bOutlineEnabled = InOutlineEnabled; }
 

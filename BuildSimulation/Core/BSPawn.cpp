@@ -2,6 +2,8 @@
 
 
 #include "Core/BSPawn.h"
+
+#include "AIController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -23,7 +25,7 @@ ABSPawn::ABSPawn()
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraSpringArm"));
 	SpringArmComponent->SetupAttachment(RootComponent);
 	SpringArmComponent->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 50.0f), FRotator(-60.0f, 0.0f, 0.0f));
-	SpringArmComponent->TargetArmLength = 3000.0f;
+	SpringArmComponent->TargetArmLength = 400.0f;
 	SpringArmComponent->bEnableCameraLag = true;
 	SpringArmComponent->CameraLagSpeed = 3.0f;
 	SpringArmComponent->bDoCollisionTest = false;
@@ -36,6 +38,13 @@ ABSPawn::ABSPawn()
 	{
 		BuildManager = Cast<ABuildManager>(UGameplayStatics::GetActorOfClass(GetWorld(), ABuildManager::StaticClass()));	
 	}
+
+	static ConstructorHelpers::FClassFinder<AAIController> ControllerClassRef(TEXT("/Script/BuildSimulation.AIUnitController"));
+	if(ControllerClassRef.Class)
+	{
+		AIControllerClass = ControllerClassRef.Class;
+	}
+
 }
 
 // Called when the game starts or when spawned

@@ -38,19 +38,10 @@ struct FPlaceableObjectData : public FTableRowBase
 	float HealthPoints;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	bool CanBeDestroyedByPlayer;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	bool CanBeDamagedByInfantry;
+	UTexture2D* Icon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	bool CanBeDamagedByDragon;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	bool Flammable;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	UTexture2D* Icon;
+	UStaticMesh* ProceedingMesh;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	UStaticMesh* Mesh;
@@ -66,12 +57,6 @@ struct FPlaceableObjectData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	bool EnableHpBar;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	float HpBarVerticalOffset;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	float HpBarWidth;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	int32 ResourceType;
