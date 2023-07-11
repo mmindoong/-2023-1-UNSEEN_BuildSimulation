@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AI/PawnUnit.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
 #include "Data/PlaceableObjectsData.h"
@@ -62,9 +63,6 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ObjectMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
-	FDataTableRowHandle ObjectNameInTable;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
 	FDynamicPlaceableObjectData ObjectDynamicData;
@@ -74,9 +72,6 @@ public:
 
 	/* Facility  Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
-	float ManPower = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
 	FConstructionCost InputResource;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
@@ -84,6 +79,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
 	bool IsManArrived;
+	
 	
 	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
 	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }
@@ -97,11 +93,11 @@ public:
 	FORCEINLINE int32 GetObjectSide() const { return ObjectSide; }
 	FORCEINLINE void SetObjectSide(int32 InObjectSide) { ObjectSide = InObjectSide; }
 
-	FORCEINLINE FDataTableRowHandle GetObjectNameInTable() const { return ObjectNameInTable; }
-	FORCEINLINE void SetObjectNameInTable(FDataTableRowHandle InObjectNameInTable) { ObjectNameInTable = InObjectNameInTable; }
-
 	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
 	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
+
+	FORCEINLINE FName GetRowName() const { return RowName; }
+	FORCEINLINE void SetRowName(FName InRowName) { RowName = InRowName; }
 
 private:
 	/* Local Function Library */
@@ -111,8 +107,8 @@ private:
 
 	/* Setting Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
-	class UDataTable* PlaceableObjectTable;
-
+	FName RowName;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	int32 ObjectSide = 0;
 
@@ -181,3 +177,4 @@ private:
 	FORCEINLINE void SetbObjectSelected(bool InObjectSelected) { bObjectSelected = InObjectSelected; }
 	
 };
+

@@ -1,7 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "PlaceableObjectBase.h"
+
 #include "Data/PlaceableObjectsData.h"
+#include "Game/BSGameSingleton.h"
 
 
 /*M+M+++M+++Mf+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -16,24 +18,10 @@ APlaceableObjectBase::APlaceableObjectBase()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
-	static ConstructorHelpers::FObjectFinder<UDataTable> DT_OBJECTDATA(TEXT("/Game/Blueprints/Data/DT_ObjectData"));
-	
-	if(DT_OBJECTDATA.Succeeded())
-	{
-		PlaceableObjectTable = DT_OBJECTDATA.Object;
-		//check(PlaceableObjectTable->GetRowMap().Num() > 0);
-		UE_LOG(LogTemp, Log, TEXT("[PlaceableObjectBase] DT_ObjectData Asset Load"));
-	}
-	// Set DataTableRowHandle Defualt value
-	FDataTableRowHandle InObjectNameInTable;
-	InObjectNameInTable.DataTable = PlaceableObjectTable;
-	InObjectNameInTable.RowName = FName("Default");
-	SetObjectNameInTable(InObjectNameInTable);
-	
 	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualRepresentation"));
 	ObjectMesh->SetupAttachment(RootComponent);
 	ObjectMesh->SetCollisionProfileName("BlockAll"); // WorldStatic Obejct
-	
+
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -43,6 +31,7 @@ APlaceableObjectBase::APlaceableObjectBase()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlaceableObjectBase::BeginPlay()
 {
+	
 	Super::BeginPlay();
 
 	if (ObjectMesh != nullptr)
@@ -136,9 +125,9 @@ void APlaceableObjectBase::OnEndCursorOver(UPrimitiveComponent* TouchedComponent
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlaceableObjectBase::SetupPlaceableObject()
 {
-	FName LocalRowName = GetObjectNameInTable().RowName;
-	FPlaceableObjectData* OutRow = GetObjectNameInTable().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
-	
+	FName LocalRowName = GetRowName();
+	FPlaceableObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FPlaceableObjectData>(LocalRowName, "");
+
 	if (OutRow != nullptr)
 	{
 		// Set OutRow -> MaxHP, HP, BorderEnbaled, OutlineEnabled, HPBarEnabled
@@ -175,6 +164,9 @@ void APlaceableObjectBase::SetupPlaceableObject()
 			SetObjectSize(ReturnValue);
 		}
 	}
+	
+
+
 	
 }
 
@@ -213,7 +205,7 @@ void APlaceableObjectBase::SetupOutline()
   
   @Modifies: [bObjectSelected]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlaceableObjectBase::SetObjectSelectedMode(bool IsSelected) //???©ª??
+void APlaceableObjectBase::SetObjectSelectedMode(bool IsSelected) //???????
 {
 	SetbObjectSelected(IsSelected);
 	if(GetbObjectSelected() == false)
@@ -274,10 +266,9 @@ void APlaceableObjectBase::DemolitionPlaceableObject()
 bool APlaceableObjectBase::BuildCompleted()
 {
 	ObjectMesh->SetStaticMesh(GetObjectData()->Mesh);
-
+	
 	return true;
 }
-
 
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

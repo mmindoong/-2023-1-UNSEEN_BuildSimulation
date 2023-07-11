@@ -6,10 +6,11 @@
 #include "BSPlayerController.h"
 #include "Build/BuildManager.h"
 #include "GameFramework/Pawn.h"
+#include "Interface/BSPawnHUDInterface.h"
 #include "BSPawn.generated.h"
 
 UCLASS()
-class BUILDSIMULATION_API ABSPawn : public APawn
+class BUILDSIMULATION_API ABSPawn : public APawn, public IBSPawnHUDInterface
 {
 	GENERATED_BODY()
 
@@ -89,5 +90,8 @@ private:
 
 	FORCEINLINE float GetCameraMaxZoom() const { return CameraMaxZoom; }
 	FORCEINLINE void SetInCameraMaxZoom(const float InCameraMaxZoom) { CameraMaxZoom = InCameraMaxZoom; }
-	
+
+	// UI Section
+protected:
+	virtual void SetupHUDWidget(UBSHUD* InHUDWidget) override;
 };

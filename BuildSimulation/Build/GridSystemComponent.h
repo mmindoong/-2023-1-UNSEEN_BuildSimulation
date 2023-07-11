@@ -44,7 +44,7 @@ public:
 	TArray<FIntPoint> GetCellsinRectangularArea(FIntPoint CenterLocation, FIntPoint TileCount);
 
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
-	void ChangeObjectforPlacement(FDataTableRowHandle NewObjectRow);
+	void ChangeObjectforPlacement(FName NewObjectRow);
 
 	/* Interact Functions */
 	UFUNCTION(BlueprintCallable, Category = "Main")
@@ -52,7 +52,7 @@ public:
 	
 	/* Tool Functions */
 	UFUNCTION(BlueprintCallable, Category="Tool")
-	void ActivateBuildingTool(FDataTableRowHandle ObjectforBuilding);
+	void ActivateBuildingTool(FName ObjectforBuilding);
 
 	UFUNCTION(BlueprintCallable, Category="Tool")
 	void DeactivateBuildingTool();
@@ -80,8 +80,8 @@ public:
 	FORCEINLINE APlacerObjectBase* GetActivePlacer() const { return ActivePlacer; }
 	FORCEINLINE void SetActivePlacer(APlacerObjectBase* InActivatePlacer) { ActivePlacer = InActivatePlacer; }
 
-	FORCEINLINE FDataTableRowHandle GetObjectForPlacement() const { return ObjectForPlacement; }
-	FORCEINLINE void SetObjectForPlacement(FDataTableRowHandle InObjectForPlacement) { ObjectForPlacement = InObjectForPlacement; }
+	FORCEINLINE FName GetObjectForPlacement() const { return ObjectForPlacement; }
+	FORCEINLINE void SetObjectForPlacement(FName InObjectForPlacement) { ObjectForPlacement = InObjectForPlacement; }
 	
 	FORCEINLINE bool GetbObjectForPlacementIsSelected() const { return bObjectForPlacementIsSelected; }
 	FORCEINLINE void SetbObjectForPlacementIsSelected(bool InbObjectForPlacementIsSelected) { bObjectForPlacementIsSelected = InbObjectForPlacementIsSelected; }
@@ -146,7 +146,7 @@ private:
 	APlacerObjectBase* ActivePlacer;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
-	FDataTableRowHandle ObjectForPlacement;
+	FName ObjectForPlacement;
 
 	/* Enabled Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enabled", meta = (AllowPrivateAccess = "true"))

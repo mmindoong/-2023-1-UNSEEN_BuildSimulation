@@ -14,15 +14,21 @@
 UCLASS()
 class BUILDSIMULATION_API UBSHUD : public UUserWidget
 {
-	GENERATED_BODY()
-
+	GENERATED_BODY()	
+public:
+	UBSHUD(const FObjectInitializer& ObjectInitializer);
+	
 protected:
-	virtual void NativeConstruct() override;
+	//virtual void NativeConstruct() override;
+
+public:
+	UFUNCTION()
+	void UpdateResource(const FConstructionCost& InPlayerResource); //Player Resource를 받아서 업데이트 시켜줌
 
 private:
 	UPROPERTY()
-	ABuildManager* BuildManager;
+	TObjectPtr<class UBSResourceWidget> ResourceWidget;
 
 	UPROPERTY()
-	UBSResourceWidget* ResourceWidget;
+	FConstructionCost PlayerResource;	
 };

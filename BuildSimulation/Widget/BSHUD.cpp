@@ -4,31 +4,27 @@
 #include "Widget/BSHUD.h"
 
 #include "Build/BuildManager.h"
+#include "Interface/BSPawnHUDInterface.h"
 #include "Kismet/GameplayStatics.h"
 
-void UBSHUD::NativeConstruct()
+UBSHUD::UBSHUD(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+}
+
+/*void UBSHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	AActor* BuildManagerActor = UGameplayStatics::GetActorOfClass(GetWorld(), ABuildManager::StaticClass());
+	ResourceWidget = Cast<UBSResourceWidget>(GetWidgetFromName(TEXT("W_ResourceWidget")));
+	IBSPawnHUDInterface* HUDPawn = Cast<IBSPawnHUDInterface>(GetOwningPlayerPawn());
+	if(HUDPawn)
+	{
+		HUDPawn->SetupHUDWidget(this); //Pawn에서 Setup시켜주고 바인딩까지 호출
+	}
 	
-	/*
-	FStringClassReference MyWidgetClassRef(TEXT("Game/Blueprints/Widget/Resource/W_ResourceWidget.W_ResourceWidget_C"));
+}*/
 
-	if ( UClass* MyWidgetClass = MyWidgetClassRef.TryLoadClass<UUserWidget>() )
-	{
-		UUserWidget* MyWidgets = CreateWidget<UUserWidget>(GetWorld(), UBSResourceWidget::StaticClass());
-		ResourceWidget = Cast<UBSResourceWidget>(MyWidgets);
-	}
-	*/
-	//ResourceWidget = Cast<UBSResourceWidget>(GetWidgetFromName(TEXT("W_ResourceWidget")));
-	
-	
-	if(BuildManagerActor)
-	{
-		BuildManager = Cast<ABuildManager>(BuildManagerActor);
-		// Binding event when UI construct
-		BuildManager->UpdateResourceAmountEvent.BindUFunction(ResourceWidget, FName("BindBuildManagerResource"));
-	}
-	
+void UBSHUD::UpdateResource(const FConstructionCost& InPlayerResource)
+{
+	//ResourceWidget->UpdateResource(InPlayerResource, PlayerResource);
 }

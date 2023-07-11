@@ -3,6 +3,7 @@
 
 #include "GridSystemComponent.h"
 
+#include "Game/BSGameSingleton.h"
 #include "Kismet/KismetMathLibrary.h"
 
 UGridSystemComponent::UGridSystemComponent()
@@ -198,7 +199,7 @@ TArray<FIntPoint> UGridSystemComponent::GetCellsinRectangularArea(FIntPoint Cent
   
   @Modifies: [bBuildToolEnabled, 
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void UGridSystemComponent::ActivateBuildingTool(FDataTableRowHandle ObjectforBuilding)
+void UGridSystemComponent::ActivateBuildingTool(FName ObjectforBuilding)
 {
 	DeactivateBuildingTool();
 	ChangeObjectforPlacement(ObjectforBuilding);
@@ -215,12 +216,8 @@ void UGridSystemComponent::ActivateBuildingTool(FDataTableRowHandle ObjectforBui
 
 		if(GetWorld())
 		{
-			FDataTableRowHandle NewPlacerDataRow;
-			NewPlacerDataRow.DataTable = GetObjectForPlacement().DataTable;
-			NewPlacerDataRow.RowName =  GetObjectForPlacement().RowName;
-			
 			SetActivePlacer(Cast<APlacerObjectBase>(GetWorld()->SpawnActor<AActor>(APlacerObjectBase::StaticClass(), SpawnLocation, rotator, SpawnParams)));
-			GetActivePlacer()->SetObjectNameInTable(NewPlacerDataRow);
+			GetActivePlacer()->SetRowName(GetObjectForPlacement());
 			GetActivePlacer()->SetupObjectPlacer();
 		}
 		if(IsValid(GetActivePlacer()))
@@ -253,7 +250,7 @@ void UGridSystemComponent::DeactivateBuildingTool()
 {
 	if(GetbBuildToolEnabled())
 	{
-		if(GetbDragStarted()) // 이미 드래그중이었는지
+		if(GetbDragStarted()) // ??? ?巡???????????
 			CancelDragObjectPlacing();
 		else
 		{
@@ -295,10 +292,10 @@ void UGridSystemComponent::ActivateDemolitionTool()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void UGridSystemComponent::DeactivateDemolitionTool()
 {
-	if(GetbDemolitionToolEnabled()) //원래 활성화되어있었는지 확인
+	if(GetbDemolitionToolEnabled()) //???? ?????????????? ???
 		{
 		SetbDemolitionToolEnabled(false);
-		//todo : 해당 함수 호출 후 CallUpdatePlaceableObjectUnderCursor(GetPlaceableObjectUnderCursor(), false); 
+		//todo : ??? ??? ??? ?? CallUpdatePlaceableObjectUnderCursor(GetPlaceableObjectUnderCursor(), false); 
 		}
 }
 
@@ -315,13 +312,13 @@ void UGridSystemComponent::DeactivateDemolitionTool()
   @Modifies: [ObjectForPlacement, PlaceableObjectData,
 			 bObjectForPlacementIsSelected]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void UGridSystemComponent::ChangeObjectforPlacement(FDataTableRowHandle NewObjectRow)
+void UGridSystemComponent::ChangeObjectforPlacement(FName NewObjectRow)
 {
 	SetObjectForPlacement(NewObjectRow);
-	if(GetObjectForPlacement().RowName != FName("None"))
+	if(GetObjectForPlacement() != FName("None"))
 	{
-		FName LocalRowName = GetObjectForPlacement().RowName;
-		FPlaceableObjectData* OutRow = GetObjectForPlacement().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
+		FName LocalRowName = GetObjectForPlacement();
+		FPlaceableObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FPlaceableObjectData>(LocalRowName, "");
 		if (OutRow != nullptr)
 		{
 			SetbObjectForPlacementIsSelected(true);

@@ -4,6 +4,7 @@
 #include "PlacerObjectBase.h"
 
 #include "Build/BuildManager.h"
+#include "Game/BSGameSingleton.h"
 #include "Kismet/GameplayStatics.h"
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -19,20 +20,6 @@ APlacerObjectBase::APlacerObjectBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
-	static ConstructorHelpers::FObjectFinder<UDataTable> DT_OBJECTDATA(TEXT("/Game/Blueprints/Data/DT_ObjectData"));
-	if(DT_OBJECTDATA.Succeeded())
-	{
-		PlaceableObjectTable = DT_OBJECTDATA.Object;
-		check(PlaceableObjectTable->GetRowMap().Num() > 0);
-		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] DT_ObjectData Asset Load"));		
-	}
-	
-	// Set DataTableRowHandle Defualt value
-	FDataTableRowHandle InObjectNameInTable;
-	InObjectNameInTable.DataTable = PlaceableObjectTable;
-	InObjectNameInTable.RowName = FName("House");
-	SetObjectNameInTable(InObjectNameInTable);
 	
 	// Create ObjectMesh StaticMesh Component
 	ObjectMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObjectMesh"));
@@ -74,6 +61,7 @@ APlacerObjectBase::APlacerObjectBase()
 		UE_LOG(LogTemp, Log, TEXT("[PlacerObjectBase] IndicatorMesh Asset Load"));
 		IndicatorMesh = IndicatorMeshAsset.Object;
 	}
+	
 
 	
 }
@@ -118,8 +106,8 @@ void APlacerObjectBase::Tick(float DeltaTime)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::SetupObjectPlacer()
 {
-	FName LocalRowName = GetObjectNameInTable().RowName;
-	FPlaceableObjectData* OutRow = GetObjectNameInTable().DataTable->FindRow<FPlaceableObjectData>(LocalRowName, "");
+	FName LocalRowName = GetRowName();
+	FPlaceableObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FPlaceableObjectData>(LocalRowName, "");
 	
 	if (OutRow != nullptr)
 	{
@@ -135,7 +123,6 @@ void APlacerObjectBase::SetupObjectPlacer()
 			ObjectMesh->SetMaterial( i, BuildingAcceptedMaterial);
 		}
 		ObjectMesh->SetCollisionProfileName(FName("NoCollision"));
-		
 		
 	}
 	
@@ -255,6 +242,42 @@ void APlacerObjectBase::UpdateMeshMatDependingAmountOfResources(bool bIsEnoughRe
 		}
 	}
 }
+
+/*UStaticMeshComponent* APlacerObjectBase::GetReusuableMesh(TArray<UStaticMeshComponent*> MeshesArray, int32 Index,
+	UStaticMesh* Mesh, bool FreePlace)
+{
+	UMaterialInterface* PlaceMaterial = FreePlace ? PlaceAcceptedMaterial : PlaceRejectedMaterial;
+	if(MeshesArray.Num() > Index)
+	{
+		Index++;
+		UStaticMeshComponent* MeshLOCAL = MeshesArray[Index-1];
+		if(MeshLOCAL->GetMaterial(0) != PlaceMaterial)
+		{
+			MeshLOCAL->SetMaterial(0, PlaceMaterial);
+			MeshLOCAL->SetVisibility(true);
+			return MeshLOCAL;
+		}
+		else
+		{
+			MeshLOCAL->SetVisibility(true);
+			return MeshLOCAL;
+		}
+	}
+	else
+	{
+		UStaticMeshComponent* NewComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass()); 
+		NewComponent->RegisterComponent();
+	
+		if(NewComponent->IsRegistered())
+		{
+			NewComponent->SetStaticMesh(IndicatorMesh);
+			NewComponent->SetMaterial(0, PlaceMaterial);
+			NewComponent->SetVisibility(true);
+			PlaceIndicators.Add(NewComponent);
+			return NewComponent;
+		}
+	}
+}*/
 
 
 

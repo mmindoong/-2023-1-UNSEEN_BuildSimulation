@@ -6,6 +6,7 @@
 #include "AIController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Widget/BSHUD.h"
 
 // Sets default values
 ABSPawn::ABSPawn()
@@ -167,10 +168,7 @@ void ABSPawn::Tick(float DeltaTime)
 	
 	if(PlayerController->WasInputKeyJustReleased(EKeys::One))
 	{
-		FDataTableRowHandle NewOjectDataRow;
-		NewOjectDataRow.DataTable = PlaceableObjectTable;
-		NewOjectDataRow.RowName =  TEXT("House");
-		BuildManager->GridSystemComponent->ActivateBuildingTool(NewOjectDataRow);
+		BuildManager->GridSystemComponent->ActivateBuildingTool(TEXT("House"));
 	}
 	if(PlayerController->WasInputKeyJustReleased(EKeys::Zero))
 	{
@@ -208,5 +206,18 @@ void ABSPawn::PressedLMB()
 void ABSPawn::ReleasedLMB()
 {
 	BuildManager->ReleasedLMB();
+}
+
+void ABSPawn::SetupHUDWidget(UBSHUD* InHUDWidget)
+{
+	// HUDWidget이 제대로 들어온 경우, 해당 위젯에 BuildManager의 자원 데이터를 넘겨줌
+	if (InHUDWidget)
+	{
+		InHUDWidget->UpdateResource(BuildManager->GetPlayerResources());
+		
+		// Build Manager의 델리게이트를 바인딩시켜주어 값이 변경할 때마다 호출되도록 구현	
+		BuildManager->OnResourceChanged.BindUFunction(InHUDWidget, FName("UpdateResource"));
+		BuildManager->UpdateResourcesValue(FConstructionCost(2000, FFoodData(1000,1000,1000), 1000, 1000, 1000, 1000, FCitizen()), false, false);
+	}
 }
 

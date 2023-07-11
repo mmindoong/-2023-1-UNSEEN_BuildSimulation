@@ -22,8 +22,12 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
-
-
-
 	
+	// HUD Section
+protected:
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=HUD)
+	TSubclassOf<class UBSHUD> BSHUDWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=HUD)
+	TObjectPtr<class UBSHUD> BSHUDWidget;*/
 };

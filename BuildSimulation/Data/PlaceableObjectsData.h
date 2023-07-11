@@ -15,6 +15,24 @@ USTRUCT(BlueprintType)
 struct FPlaceableObjectData : public FTableRowBase
 {
 	GENERATED_USTRUCT_BODY()
+
+	FPlaceableObjectData()
+	: ObjectPlacerClass(nullptr)
+	, PlacaebleObjectClass(nullptr)
+	, ConstructionCost()
+	, ObjectSize()
+	, MaxHeightDifferenceForConstruction(0)
+	, ReturnResourcesPercent(0)
+	, HealthPoints(0)
+	, Icon(nullptr)
+	, ProceedingMesh(nullptr)
+	, Mesh(nullptr)
+	, Name()
+	, Description()
+	, EnableOutline()
+	, EnableHpBar()
+	, ResourceType(0)
+	{};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	TSubclassOf<APlacerObjectBase> ObjectPlacerClass;

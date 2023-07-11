@@ -6,6 +6,7 @@
 #include "Placer/PlacerObjectBase.h"
 #include "Data/PlaceableObjectsData.h"
 #include "GridSystemComponent.h"
+#include "ResourceActorComponent.h"
 #include "BuildManager.generated.h"
 
 /* Delegate Declare */
@@ -21,12 +22,14 @@ public:
 	ABuildManager();
 
 	/* Delegate Instance */
-	FUpdateResourceAmount UpdateResourceAmountEvent;
-	
+	FUpdateResourceAmount OnResourceChanged;
 	FBuildNotEnoughResource BuildNotEnoughResourceEvent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UGridSystemComponent* GridSystemComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UResourceActorComponent* ResourceActorComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	TArray<FDataTableRowHandle> BuildingsAvailableForConstruction;
@@ -98,7 +101,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Resource")
 	void UpdateResourcesValue(FConstructionCost Resource, bool Add, bool Subtract);
 	
-
+	FORCEINLINE FConstructionCost GetPlayerResources() const {return PlayerResources;}
+	FORCEINLINE void SetPlayerResources(const FConstructionCost InPlayerResources) { PlayerResources = InPlayerResources; };//OnResourceChanged.Execute(GetPlayerResources()); };
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -215,9 +219,6 @@ private:
 
 	FORCEINLINE APlayerController* GetPlayerController() const {return PlayerController;}
 	FORCEINLINE void SetPlayerController(APlayerController* InPlayerController) { PlayerController = InPlayerController; }
-
-	FORCEINLINE FConstructionCost GetPlayerResources() const {return PlayerResources;}
-	FORCEINLINE void SetPlayerResources(const FConstructionCost InPlayerResources) { PlayerResources = InPlayerResources; }
 
 	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectBase() const {return PlaceableObjectBase;}
 	FORCEINLINE void SetPlaceableObjectBase(APlaceableObjectBase* InPlaceableObjectBase) { PlaceableObjectBase = InPlaceableObjectBase; }

@@ -3,6 +3,7 @@
 #include "BuildManager.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/PostProcessVolume.h"
+#include "Game/BSGameSingleton.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -26,6 +27,7 @@ ABuildManager::ABuildManager()
 	InstancedStaticMeshComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("InstancedStaticMesh"));
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	GridSystemComponent = CreateDefaultSubobject<UGridSystemComponent>(TEXT("GridSystemComponent"));
+	ResourceActorComponent = CreateDefaultSubobject<UResourceActorComponent>(TEXT("ResourceActorComponent"));
 	RootComponent = InstancedStaticMeshComponent;
 	
 	// Outline Material Asset Load
@@ -43,6 +45,7 @@ ABuildManager::ABuildManager()
 		UE_LOG(LogTemp, Log, TEXT("[BuildManager] IndicatorMesh Asset Load"));
 		IndicatorMesh = IndicatorMeshAsset.Object;
 	}
+	
 
 	
 }
@@ -69,7 +72,7 @@ void ABuildManager::BeginPlay()
 		}
 	}
 	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	UpdateResourcesValue(FConstructionCost(2000, FFoodData(1000,1000,1000), 1000, 1000, 1000, 1000, FCitizen()), false, false);
+	UpdateResourcesValue(FConstructionCost(0, FFoodData(0,0,0), 10, 20, 10, 0, FCitizen(10,0, 100, 100)), true, false);
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -171,6 +174,7 @@ void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* I
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::PressedLMB()
 {
+	
 	GridSystemComponent->SetbInteractStarted(true); // 클릭했는지 Released에서 확인용
 	SelectPlaceableObject();
 	if(GridSystemComponent->GetbObjectForPlacementIsSelected())
@@ -183,6 +187,7 @@ void ABuildManager::PressedLMB()
 				SetStartLocationUnderCursor(ResultCamera.Location);
 		}
 	}
+	
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -238,11 +243,8 @@ void ABuildManager::BuildPlaceableObject()
 	{
 		// DT에 저장되어 있는 Object 자식 클래스로 호출
 		SetPlaceableObjectBase(Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(GridSystemComponent->GetActivePlacer()->GetObjectData()->PlacaebleObjectClass, SpawnLocation, SpawnRotator, SpawnParams)));
-		FDataTableRowHandle NewOjectDataRow;
-		NewOjectDataRow.DataTable =GridSystemComponent->GetActivePlacer()->GetObjectNameInTable().DataTable;
-		NewOjectDataRow.RowName =  GridSystemComponent->GetActivePlacer()->GetObjectNameInTable().RowName;
-		//GetPlaceableObjectBase()->GetObjectData()->PlacaebleObjectClass
-		GetPlaceableObjectBase()->SetObjectNameInTable(NewOjectDataRow);
+		GetPlaceableObjectBase()->SetRowName(GridSystemComponent->GetActivePlacer()->GetRowName());
+		
 		//DynamicObject 구조체 PlaceableObject 생성시 설정
 		FDynamicPlaceableObjectData ObjectDynamicData = FDynamicPlaceableObjectData(true, GetCellUnderCursor(),GridSystemComponent->GetActivePlacer()->GetBuildDirection(), 0.0f, 0.0f);
 		GetPlaceableObjectBase()->SetObjectDynamicData(ObjectDynamicData);
@@ -452,7 +454,7 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 	// Save the variables for later. We'll need them as long as the grid is alive.
 	GridSystemComponent->SetGridCenterLocation(CenterLocation);
 	
-	GridSystemComponent->SetGridTileSize(TileSize);
+	GridSystemComponent->SetGridTileSize(TileSize);	
 	GridSystemComponent->SetGridTileCount(TileCount);
 
 	// Even/Odd to Round
@@ -536,6 +538,31 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 					FTransform TileTransform;
 					TileTransform.SetLocation(TileTransformLocation);
 					TileTransform.SetScale3D(TileTransformScale);
+					// Ground 체크
+					FHitResult HitResult;
+					FVector StartLocation = TileTransformLocation + FVector(0.0f, 0.0f, 100.0f);
+					FVector EndLocation =  TileTransformLocation +  FVector(0.0f, 0.0f, -500.0f);;
+					TArray<AActor*> ActorsToIgnore;
+					FCollisionQueryParams Params;
+					bool IsHitResult = UKismetSystemLibrary::LineTraceSingle(
+								GetWorld(),
+								StartLocation,
+								EndLocation,
+								UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel1),
+								false,
+								ActorsToIgnore,
+								EDrawDebugTrace::None,
+								HitResult,
+								true,
+								FLinearColor::Red,
+								FLinearColor::Green,
+								10.0f);
+		
+					if(IsHitResult == false)
+					{
+						continue;
+					}
+					
 					// Add Instanced Static Mesh
 					int32 InstanceIndex = InstancedStaticMeshComponent->AddInstance(TileTransform, true);
 					
@@ -583,8 +610,6 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 					
 				}
 			}
-			
-			
 		}
 	}
 	
@@ -727,7 +752,6 @@ void ABuildManager::SetupObjectData(FIntPoint Cell, APlaceableObjectBase* Placea
 	// If the Data already exists, it will be overwritten.
 	ObjectData.Add(Cell, PlaceableObject);
 }
-
 
 
 

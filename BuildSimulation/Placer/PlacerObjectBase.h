@@ -48,6 +48,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void UpdateMeshMatDependingAmountOfResources(bool bIsEnoughResource);
+
+	/*UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
+	UStaticMeshComponent* GetReusuableMesh(TArray<UStaticMeshComponent*> MeshesArray, int32 Index, UStaticMesh* Mesh, bool FreePlace);*/
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ObjectMesh;
@@ -78,22 +81,20 @@ public:
 	FORCEINLINE TArray<UStaticMeshComponent*> GetPlaceIndicators() { return PlaceIndicators; }
 	FORCEINLINE void SetPlaceIndicators(TArray<UStaticMeshComponent*> InPlaceIndicators) { PlaceIndicators = InPlaceIndicators; }
 
-	FORCEINLINE FDataTableRowHandle GetObjectNameInTable() { return ObjectNameInTable; }
-	FORCEINLINE void SetObjectNameInTable(FDataTableRowHandle InObjectNameInTable) { ObjectNameInTable = InObjectNameInTable; }
-
 	FORCEINLINE int32 GetBuildDirection() const { return BuildDirection; }
 	FORCEINLINE void SetBuildDirection(int32 InBuildDirection) { BuildDirection = InBuildDirection; }
 
+	FORCEINLINE FName GetRowName() const { return RowName; }
+	FORCEINLINE void SetRowName(FName InRowName) { RowName = InRowName; }
+
+	
 private:
 	FPlaceableObjectData* ObjectData;
 
 	/* Setting Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
-	class UDataTable* PlaceableObjectTable;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
-	FDataTableRowHandle ObjectNameInTable;
-
+	FName RowName;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	UMaterialInterface* BuildingAcceptedMaterial;
 
