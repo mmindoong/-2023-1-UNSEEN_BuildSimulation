@@ -25,7 +25,7 @@
 </details>
 
 # About the Project
-<div align="center"><img src=https://user-images.githubusercontent.com/70145314/230829758-6ea9402f-122c-42bc-84da-8ecd38bbfdea.png width="600"></div> 
+<div align="center"><img src=https://github.com/mmindoong/-2023-1-UNSEEN_BuildSimulation/assets/70145314/bbb17b25-246e-4b78-ba78-163ae4f08b90.gifwidth="600"></div> 
 
 </br>
 
@@ -58,7 +58,8 @@
 <br/>
 
 ### 기능 명세서
-<div align="center"><img src=https://user-images.githubusercontent.com/70145314/230832427-2e71b47e-710f-42d4-93c7-dc33f5ddf7ae.png width="900"></div> 
+<div align="center"><img src=https://github.com/mmindoong/-2023-1-UNSEEN_BuildSimulation/assets/70145314/348eda3c-fdb9-43a8-bf82-a75437742889.png width="900"></div> 
+
 
 <br/>
 
