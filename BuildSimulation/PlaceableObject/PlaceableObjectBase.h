@@ -4,16 +4,31 @@
 
 #include "CoreMinimal.h"
 #include "AI/PawnUnit.h"
+#include "Build/ResourceManager.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
 #include "Data/PlaceableObjectsData.h"
-#include "Data/DynamicPlaceableObjectData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "PlaceableObjectBase.generated.h"
 
 /* Delegate Declare */
 DECLARE_DELEGATE_TwoParams(FUpdatePlaceableObject, APlaceableObjectBase* PlaceableObject, bool IsRemove);
+struct FActorDistancePair
+{
+	AActor* Actor;
+	float Distance;
+
+	FActorDistancePair(AActor* InActor, float InDistance)
+		: Actor(InActor), Distance(InDistance)
+	{}
+
+	// 우선순위 큐에서 거리가 작은 순서로 정렬되도록 연산자 오버로딩
+	bool operator<(const FActorDistancePair& Other) const
+	{
+		return Distance > Other.Distance;
+	}
+};
 
 UCLASS()
 class BUILDSIMULATION_API APlaceableObjectBase : public AActor
@@ -27,6 +42,15 @@ public:
 	/* Delegate Instance */
 	FUpdatePlaceableObject UpdatePlaceableObjectCursorEvent;
 
+	UFUNCTION(BlueprintImplementableEvent, Category = Game, Meta = (DisplayName = "OnDisplayDetailWidget")) //bp에서 Display 시킬 함수 이름
+	void K2_OnDisplayDetailWidget();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = Game, Meta = (DisplayName = "OnHideDetailWidget")) //bp에서 Display 시킬 함수 이름
+	void K2_OnHideDetailWidget();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = Game, Meta = (DisplayName = "OnUpdateHappinessData")) //bp에서 Display 시킬 함수 이름
+	void K2_OnUpdateHappinessData();
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -39,7 +63,6 @@ protected:
 
 	UFUNCTION()
 	void OnEndCursorOver(UPrimitiveComponent* TouchedComponent);
-
 
 public:	
 	/* Parent Functions */
@@ -60,15 +83,34 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	virtual bool BuildCompleted();
+
+	/* Parent Function - Find Actors */
+	UFUNCTION(BlueprintCallable, Category = "Find Actors")
+	bool FindClosestUnits(int32 NumActorsToFind, TArray<AActor*>& OutActors);
+
+	UFUNCTION(BlueprintCallable, Category = "Find Actors")
+	bool FindClosestInputs(int32 ResourceSetType, TSubclassOf<AActor> ActorClass, int32 NumActorsToFind, TArray<AActor*>& OutActors);
+
+	UFUNCTION(BlueprintCallable, Category = "Find Actors")
+	bool FindClosestMaterialOutputs(int32 NumActorsToFind, TArray<AActor*>& OutActors);
+
+	UFUNCTION(BlueprintCallable, Category = "Find Actors")
+	bool FindClosestFoodOutpus(int32 NumActorsToFind, TArray<AActor*>& OutActors);
+	
+	UFUNCTION(BlueprintCallable, Category = "Find Actors")
+	void RemoveResourceActor(AActor* RemoveActor);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Find Actors", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AResourceManager> ResourceManager;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* ObjectMesh;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
-	FDynamicPlaceableObjectData ObjectDynamicData;
+	TObjectPtr<UStaticMeshComponent> ObjectMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
 	TArray<FIntPoint> OccupiedCells;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
+	bool IsConstructing = true;
 
 	/* Facility  Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
@@ -76,19 +118,33 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
 	FConstructionCost OutputResource;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
+	TArray<FIntPoint> ObjectCellLocation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
-	bool IsManArrived;
+	int32 HappinessFacilityType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
+	TArray<int32> OwnerofHappiness;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
+	bool IsResidentFacility;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
+	bool IsDynamicData = true;
+
+	FORCEINLINE bool GetIsResidentFacility() const { return IsResidentFacility; }
+	FORCEINLINE void SetIsResidentFacility(bool InIsResidentFacility) { IsResidentFacility = InIsResidentFacility; }
+	
+	FORCEINLINE int32 GetHappinessFacilityType() const { return HappinessFacilityType; }
+	FORCEINLINE void SetHappinessFacilityType(int32 InHappinessFacilityType) { HappinessFacilityType = InHappinessFacilityType; }
 	
 	FORCEINLINE FIntPoint GetOccupiedCenterCell() const { return OccupiedCenterCell; }
 	FORCEINLINE void SetOccupiedCenterCell(FIntPoint InOccupiedCenterCell) { OccupiedCenterCell = InOccupiedCenterCell; }
 	
 	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
 	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
-
-	FORCEINLINE FDynamicPlaceableObjectData GetObjectDynamicData() const { return ObjectDynamicData; }
-	FORCEINLINE void SetObjectDynamicData(FDynamicPlaceableObjectData InObjectDynamicData) { ObjectDynamicData = InObjectDynamicData; }
 
 	FORCEINLINE int32 GetObjectSide() const { return ObjectSide; }
 	FORCEINLINE void SetObjectSide(int32 InObjectSide) { ObjectSide = InObjectSide; }
@@ -99,6 +155,14 @@ public:
 	FORCEINLINE FName GetRowName() const { return RowName; }
 	FORCEINLINE void SetRowName(FName InRowName) { RowName = InRowName; }
 
+	FORCEINLINE int32 GetBuildDirection() const { return BuildDirection; }
+	FORCEINLINE void SetBuildDirection(int32 InBuildDirection) { BuildDirection = InBuildDirection; }
+
+	FORCEINLINE bool GetIsConstructing() const { return IsConstructing; }
+	FORCEINLINE void SetIsConstructing(bool InIsConstructing) { IsConstructing = InIsConstructing; }
+
+	FORCEINLINE bool GetIsConstructionFacility() const { return IsConstructionFacility; }
+	FORCEINLINE void SetIsConstructionFacility(bool InIsConstructionFacility) { IsConstructionFacility = InIsConstructionFacility; }
 private:
 	/* Local Function Library */
 	void LSwapObjectOutline(bool IsEnable);
@@ -114,6 +178,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	float StartingHealthPercent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
+	int32 BuildDirection = 0;
 	
 	/* ObjectData Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
@@ -139,6 +206,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	float ObjectHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
+	bool IsConstructionFacility = false;
 
 	/* Object Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))

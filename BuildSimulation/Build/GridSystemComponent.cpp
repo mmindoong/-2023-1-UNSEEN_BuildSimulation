@@ -54,15 +54,7 @@ FVector UGridSystemComponent::GetCellLocation(FIntPoint InCell, FVector InCamera
 	FVector EndLocation =  FVector(LocationLOCAL.X, LocationLOCAL.Y, GetEndTraceHeight() + InCameraLocation.Z);
 	TArray<AActor*> ActorsToIgnore;
 	FCollisionQueryParams Params;
-
-	/*
-	bool IsHitResult = GetWorld()->LineTraceSingleByChannel(
-		HitResult,
-		StartLocation,
-		EndLocation,
-		ECC_GameTraceChannel1,
-		Params);
-	*/
+	
 	bool IsHitResult = UKismetSystemLibrary::LineTraceSingle(
 		GetWorld(),
 		StartLocation,
@@ -250,7 +242,7 @@ void UGridSystemComponent::DeactivateBuildingTool()
 {
 	if(GetbBuildToolEnabled())
 	{
-		if(GetbDragStarted()) // ??? ?то???????????
+		if(GetbDragStarted()) // ??? ??????????????
 			CancelDragObjectPlacing();
 		else
 		{
@@ -330,6 +322,15 @@ void UGridSystemComponent::ChangeObjectforPlacement(FName NewObjectRow)
 	else
 		SetbObjectForPlacementIsSelected(false);
 	
+}
+
+FVector2D UGridSystemComponent::GetCenterofCell(FIntPoint InCell)
+{
+	float locationX = FMath::Sign(InCell.X) * GetGridTileSize().X * abs(InCell.X);
+	float locationY = FMath::Sign(InCell.Y) * GetGridTileSize().Y * abs(InCell.Y);
+
+	return FVector2D(locationX, locationY);
+
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

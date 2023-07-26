@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AI/PawnUnit.h"
+#include "Build/BuildManager.h"
 #include "PlaceableObject/PlaceableObjectBase.h"
 #include "PlaceableObject_House.generated.h"
 
@@ -21,33 +22,10 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	ABuildManager* BuildManager;
 	
-	UFUNCTION(BlueprintCallable)
-	bool FindClosestUnits(int32 NumActorsToFind, TArray<AActor*>& OutActors);
-
-	UFUNCTION(BlueprintCallable)
-	bool FindClosestResources(int32 NumActorsToFind, TArray<AActor*>& OutActors);
 	
-	TSubclassOf<AActor> Unit;
-	TSubclassOf<AActor> Resource;
 };
 
-struct FActorDistancePair
-{
-	AActor* Actor;
-	float Distance;
 
-	FActorDistancePair(AActor* InActor, float InDistance)
-		: Actor(InActor), Distance(InDistance)
-	{}
-
-	// 우선순위 큐에서 거리가 작은 순서로 정렬되도록 연산자 오버로딩
-	bool operator<(const FActorDistancePair& Other) const
-	{
-		return Distance > Other.Distance;
-	}
-};
 
 

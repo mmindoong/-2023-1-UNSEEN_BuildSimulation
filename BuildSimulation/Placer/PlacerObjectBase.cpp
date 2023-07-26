@@ -116,7 +116,8 @@ void APlacerObjectBase::SetupObjectPlacer()
 		SetPlaceableObjectClass(GetObjectData()->PlacaebleObjectClass);
 		SetObjectSize(FIntPoint(FMath::Clamp<int32>(GetObjectData()->ObjectSize.X, 1, GetObjectData()->ObjectSize.X),
 			FMath::Clamp<int32>(GetObjectData()->ObjectSize.Y, 1, GetObjectData()->ObjectSize.Y)));
-		ObjectMesh->SetStaticMesh(ObjectData->Mesh);
+		ObjectMesh->SetStaticMesh(ObjectData->Mesh.Get());
+		SetResourceType(GetObjectData()->ResourceType);
 		
 		for(int i =0; i < ObjectData->Mesh->GetNumSections(0); i++)
 		{
@@ -140,8 +141,8 @@ M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlacerObjectBase::ActivateObjectPlacer()
 {
 	SetActorTickEnabled(true);
-	if(IsValid(ObjectMesh))
-		ObjectMesh->SetVisibility(true, true);
+	
+	ObjectMesh->SetVisibility(true, true);
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

@@ -217,7 +217,7 @@ void ABSPawn::SetupHUDWidget(UBSHUD* InHUDWidget)
 		
 		// Build Manager의 델리게이트를 바인딩시켜주어 값이 변경할 때마다 호출되도록 구현	
 		BuildManager->OnResourceChanged.BindUFunction(InHUDWidget, FName("UpdateResource"));
-		BuildManager->UpdateResourcesValue(FConstructionCost(2000, FFoodData(1000,1000,1000), 1000, 1000, 1000, 1000, FCitizen()), false, false);
+		BuildManager->UpdateResourcesValue(FConstructionCost(2000, FFoodData(1000,1000,1000), 1000, 1000, 1000, 1000, 0,0), false, false);
 	}
 }
 

@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Data/PlaceableObjectsData.h"
-#include "Data/DynamicPlaceableObjectData.h"
 #include "PlacerObjectBase.generated.h"
 
 class APlaceableObjectBase;
@@ -49,14 +48,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void UpdateMeshMatDependingAmountOfResources(bool bIsEnoughResource);
 
-	/*UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
-	UStaticMeshComponent* GetReusuableMesh(TArray<UStaticMeshComponent*> MeshesArray, int32 Index, UStaticMesh* Mesh, bool FreePlace);*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
+	TArray<FIntPoint> ObjectCellLocation;
+
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* ObjectMesh;
+	TObjectPtr<UStaticMeshComponent> ObjectMesh;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMesh* IndicatorMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
+	int32 ResourceType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	UMaterialInterface* PlaceAcceptedMaterial;
@@ -86,6 +89,9 @@ public:
 
 	FORCEINLINE FName GetRowName() const { return RowName; }
 	FORCEINLINE void SetRowName(FName InRowName) { RowName = InRowName; }
+
+	FORCEINLINE int32 GetResourceType() const { return ResourceType; }
+	FORCEINLINE void SetResourceType(int32 InResourceType) { ResourceType = InResourceType; }
 
 	
 private:

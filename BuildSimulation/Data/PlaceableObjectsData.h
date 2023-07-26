@@ -21,7 +21,6 @@ struct FPlaceableObjectData : public FTableRowBase
 	, PlacaebleObjectClass(nullptr)
 	, ConstructionCost()
 	, ObjectSize()
-	, MaxHeightDifferenceForConstruction(0)
 	, ReturnResourcesPercent(0)
 	, HealthPoints(0)
 	, Icon(nullptr)
@@ -32,6 +31,7 @@ struct FPlaceableObjectData : public FTableRowBase
 	, EnableOutline()
 	, EnableHpBar()
 	, ResourceType(0)
+	, IsProductionFacility(false)
 	{};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
@@ -45,10 +45,7 @@ struct FPlaceableObjectData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	FIntPoint ObjectSize;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	float MaxHeightDifferenceForConstruction;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	int32 ReturnResourcesPercent;
 
@@ -56,13 +53,13 @@ struct FPlaceableObjectData : public FTableRowBase
 	float HealthPoints;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	UTexture2D* Icon;
+	TObjectPtr<UTexture2D> Icon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	UStaticMesh* ProceedingMesh;
+	TObjectPtr<UStaticMesh> ProceedingMesh;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	UStaticMesh* Mesh;
+	TObjectPtr<UStaticMesh> Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	FString Name;
@@ -77,5 +74,14 @@ struct FPlaceableObjectData : public FTableRowBase
 	bool EnableHpBar;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	int32 ResourceType;
+	int32 ResourceType; // 0:Units 1:Wood 2:Rock 3:Iron 4:Coal
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
+	bool IsProductionFacility;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
+	bool IsResidentFacility;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
+	int32 HappinessFacilityType; // 1:Road, 2:Well, 3:Market, 4:Church, 5:Bank
 };

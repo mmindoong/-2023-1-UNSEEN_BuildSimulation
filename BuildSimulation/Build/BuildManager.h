@@ -7,6 +7,7 @@
 #include "Data/PlaceableObjectsData.h"
 #include "GridSystemComponent.h"
 #include "ResourceActorComponent.h"
+#include "Containers/Map.h"
 #include "BuildManager.generated.h"
 
 /* Delegate Declare */
@@ -32,7 +33,8 @@ public:
 	UResourceActorComponent* ResourceActorComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	TArray<FDataTableRowHandle> BuildingsAvailableForConstruction;
+	TArray<FName> BuildingsAvailableForConstruction;
+
 	
 protected:
 	// Called when the game starts or when spawned
@@ -72,11 +74,17 @@ public:
 	void SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntPoint TileCount);
 
 	UFUNCTION(BlueprintCallable, Category = "Build")
+	void SetupNatural();
+
+	UFUNCTION(BlueprintCallable, Category = "Build")
 	void BuildPlaceableObject();
 
 	UFUNCTION(BlueprintCallable, Category = "Build")
-	void DrawPlacementIndicators();
+	void PlaceEditorObject(APlaceableObjectBase* PlaceableObject, FName RowName);
 
+	UFUNCTION(BlueprintCallable, Category = "Build")
+	void DrawPlacementIndicators();
+	
 	UFUNCTION(BlueprintCallable, Category="Tool")
 	void DestorySelectedPlaceableObject();
 
@@ -88,14 +96,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Data|Occupancy")
 	void ChangeOccupancyData(FIntPoint Cell, bool IsOccupied);
 
+	UFUNCTION(BlueprintCallable, Category = "Data|Object")
+	void SearchHappinessFacility_Resident(APlaceableObjectBase* PlaceableObject);
+
 	UFUNCTION(BlueprintCallable, Category = "Data|TileMap")
 	void SetupTileMapData(FIntPoint Cell, int32 InSoil);
 
 	UFUNCTION(BlueprintCallable, Category = "Data|TileMap")
 	bool CheckTileMapData(FIntPoint Cell);
+
+	UFUNCTION(BlueprintCallable, Category = "Data|TileMap")
+	bool CheckResourceMapData(int32 ActivePlacerResourceTypeResourceType, FIntPoint Cell);
 	
 	UFUNCTION(BlueprintCallable, Category = "Data|Object")
 	void SetupObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
+	
 	
 	/* Resource Functions */
 	UFUNCTION(BlueprintCallable, Category = "Resource")
@@ -109,7 +124,7 @@ protected:
 	UInstancedStaticMeshComponent* InstancedStaticMeshComponent;
 
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* StaticMeshComponent;
+	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMesh* IndicatorMesh;
@@ -141,14 +156,19 @@ private:
 
 	/* Data Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
-	TMap<FIntPoint, int32> OccupancyData;
+	TMap<FIntPoint, int32> OccupancyData; // True : 1, False : 0
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
-	TMap<FIntPoint, int32> TileMapData;
+	TMap<FIntPoint, int32> TileMapData; // Green : 0, Yellow : 1, Red : 2
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
+	TMap<FIntPoint, int32> ResourceTypeData; // Wood : 0, Rock : 1, Iron : 2, Coal : 3
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
 	TMap<FIntPoint, APlaceableObjectBase*> ObjectData;
-
+	
+	TMultiMap<FIntPoint, int32> HappinessTypeData; // 1:Road, 2:Well, 3:Market, 4:Church, 5:Bank
+	
 	/* Player Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player", meta = (AllowPrivateAccess = "true"))
 	APlayerController* PlayerController;
@@ -254,3 +274,6 @@ private:
 	FORCEINLINE void SetStartLocationUnderCursor(FVector InStartLocationUnderCursor) { StartLocationUnderCursor = InStartLocationUnderCursor; }
 	
 };
+
+
+

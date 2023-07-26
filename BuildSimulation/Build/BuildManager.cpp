@@ -1,7 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "BuildManager.h"
+
+#include "Background/NaturalObject.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Core/BSPlayerController.h"
 #include "Engine/PostProcessVolume.h"
 #include "Game/BSGameSingleton.h"
 #include "Kismet/KismetMaterialLibrary.h"
@@ -9,6 +12,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
+#include "PlaceableObject/ResidentFacility/PlaceableObject_House.h"
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   ABuildManager
@@ -72,7 +76,7 @@ void ABuildManager::BeginPlay()
 		}
 	}
 	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	UpdateResourcesValue(FConstructionCost(0, FFoodData(0,0,0), 10, 20, 10, 0, FCitizen(10,0, 100, 100)), true, false);
+	UpdateResourcesValue(FConstructionCost(0, FFoodData(10,10,10), 10, 20, 10, 10, 10,0), true, false);
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -212,13 +216,17 @@ void ABuildManager::ReleasedLMB()
 				{
 					BuildPlaceableObject();
 				}
+				else
+				{
+					ABSPlayerController* Player = Cast<ABSPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+					Player->K2_OnBuildEvent();
+				}
 			}
 		}
 		GridSystemComponent->SetbInteractStarted(false);
 		GridSystemComponent->SetbDragStarted(false);
 		GridSystemComponent->SetbDragWasInterrupted(false);
 	}
-	
 }
 
 
@@ -244,45 +252,161 @@ void ABuildManager::BuildPlaceableObject()
 		// DT에 저장되어 있는 Object 자식 클래스로 호출
 		SetPlaceableObjectBase(Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(GridSystemComponent->GetActivePlacer()->GetObjectData()->PlacaebleObjectClass, SpawnLocation, SpawnRotator, SpawnParams)));
 		GetPlaceableObjectBase()->SetRowName(GridSystemComponent->GetActivePlacer()->GetRowName());
-		
-		//DynamicObject 구조체 PlaceableObject 생성시 설정
-		FDynamicPlaceableObjectData ObjectDynamicData = FDynamicPlaceableObjectData(true, GetCellUnderCursor(),GridSystemComponent->GetActivePlacer()->GetBuildDirection(), 0.0f, 0.0f);
-		GetPlaceableObjectBase()->SetObjectDynamicData(ObjectDynamicData);
-
-		// Object RowName, DynamicData 설정 후 Setting 진행
+		GetPlaceableObjectBase()->SetBuildDirection(GridSystemComponent->GetActivePlacer()->GetBuildDirection());
+		// Object Cell Location setting
+		GetPlaceableObjectBase()->ObjectCellLocation = GridSystemComponent->GetActivePlacer()->ObjectCellLocation;
+		// Object RowName, Data 설정 후 Setting 진행
 		GetPlaceableObjectBase()->SetupPlaceableObject();
 		GetPlaceableObjectBase()->SetupOutline();
 		UpdateResourcesValue(GetPlaceableObjectBase()->GetObjectData()->ConstructionCost, false, true);
 	}
 	
-
 	if(IsValid(GetPlaceableObjectBase()))
 	{
+		// BuildPlaceableObject 함수로 호출한 경우 true, 에디터에서 배치한 경우 false
+		GetPlaceableObjectBase()->IsDynamicData = true;
 		// Build Manger에서 점유된 셀 정보 세팅해주기
-		if(GetPlaceableObjectBase()->GetObjectDynamicData().HasData)
+		GetPlaceableObjectBase()->SetOccupiedCenterCell(FIntPoint(GetActorLocation().X, GetActorLocation().Y));
+		TArray<FIntPoint> GetOccupiedCells = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()),
+			GetPlaceableObjectBase()->GetObjectSize());
+		for (FIntPoint cells : GetOccupiedCells)
 		{
-			TArray<FIntPoint> GetOccupiedCells = GridSystemComponent->GetCellsinRectangularArea(GetPlaceableObjectBase()->GetOccupiedCenterCell(), GetPlaceableObjectBase()->GetObjectSize());
-			for (FIntPoint cells : GetOccupiedCells)
-			{
-				ChangeOccupancyData(cells, true);
-				SetupObjectData(cells, GetPlaceableObjectBase());
-				GetPlaceableObjectBase()->OccupiedCells.Add(cells);
-			}
+			ChangeOccupancyData(cells, true);
+			SetupObjectData(cells, GetPlaceableObjectBase());
+			GetPlaceableObjectBase()->OccupiedCells.Add(cells);
 		}
-		else 
-		{
-			GetPlaceableObjectBase()->SetOccupiedCenterCell(FIntPoint(GetActorLocation().X, GetActorLocation().Y));
-			TArray<FIntPoint> GetOccupiedCells = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()), GetPlaceableObjectBase()->GetObjectSize());
-			for (FIntPoint cells : GetOccupiedCells)
-			{
-				ChangeOccupancyData(cells, true);
-				SetupObjectData(cells, GetPlaceableObjectBase());
-				GetPlaceableObjectBase()->OccupiedCells.Add(cells);
-			}
-		}
+		
 		// Binding event when PlaceableObject construct
 		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
+
+		// 행복도 건물을 세운 경우 주거 시설인 object들에 대해서 행복건물 반경에 따라 HappinessTypeData 설정하기
+		if(GetPlaceableObjectBase()->HappinessFacilityType != 0)
+		{
+			FIntPoint Range;
+			switch (GetPlaceableObjectBase()->HappinessFacilityType)
+			{
+			case 0 :
+				break;
+			case 1 : // road
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 3, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 3);
+				break;
+			case 2 : // well
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 3, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 3);
+				break;
+			case 3 : // market
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 4, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 4);
+				break;
+			case 4 : // church
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 7, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 7);
+				break;
+			case 5 : // bank
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 5, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 5);
+				break;
+			}
+			TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()),
+				Range); // 행복 시설 반경만큼 cell 확인
+			
+			for(auto cells : CellsforBuild)
+			{
+				// 행복도 건물 data 반경만큼 설정
+				HappinessTypeData.Add(cells, GetPlaceableObjectBase()->HappinessFacilityType);
+			}
+		}
 	}
+}
+
+void ABuildManager::PlaceEditorObject(APlaceableObjectBase* PlaceableObject, FName RowName)
+{
+	if(GetWorld())
+	{
+		// 배치된 Object를 self로 가져와서 설정해줌. 
+		SetPlaceableObjectBase(PlaceableObject);
+		GetPlaceableObjectBase()->SetRowName(RowName);
+		GetPlaceableObjectBase()->SetBuildDirection(PlaceableObject->GetBuildDirection());
+		// Object Cell Location setting
+		GetPlaceableObjectBase()->ObjectCellLocation =PlaceableObject->ObjectCellLocation;
+		// Object RowName, Data 설정 후 Setting 진행
+		GetPlaceableObjectBase()->SetupPlaceableObject();
+		GetPlaceableObjectBase()->SetupOutline();
+	}
+	
+	if(IsValid(GetPlaceableObjectBase()))
+	{
+		
+		// Build Manger에서 점유된 셀 정보 세팅해주기
+		GetPlaceableObjectBase()->SetOccupiedCenterCell(FIntPoint(GetActorLocation().X, GetActorLocation().Y));
+		TArray<FIntPoint> GetOccupiedCells = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(PlaceableObject->GetActorLocation()),
+			GetPlaceableObjectBase()->GetObjectSize());
+		for (FIntPoint cells : GetOccupiedCells)
+		{
+			ChangeOccupancyData(cells, true);
+			SetupObjectData(cells, GetPlaceableObjectBase());
+			GetPlaceableObjectBase()->OccupiedCells.Add(cells);
+		}
+		
+		// Binding event when PlaceableObject construct
+		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
+
+		// 행복도 건물을 세운 경우 주거 시설인 object들에 대해서 행복건물 반경에 따라 HappinessTypeData 설정하기
+		if(PlaceableObject->HappinessFacilityType != 0)
+		{
+			FIntPoint Range;
+			switch (PlaceableObject->HappinessFacilityType)
+			{
+			case 0 :
+				break;
+			case 1 : // road
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 3, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 3);
+				break;
+			case 2 : // well
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 3, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 3);
+				break;
+			case 3 : // market
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 4, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 4);
+				break;
+			case 4 : // church
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 7, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 7);
+				break;
+			case 5 : // bank
+				Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 5, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 5);
+				break;
+			}
+			TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()),
+				Range); // 행복 시설 반경만큼 cell 확인
+			
+			for(auto cells : CellsforBuild)
+			{
+				// 행복도 건물 data 반경만큼 설정
+				HappinessTypeData.Add(cells, PlaceableObject->HappinessFacilityType);
+			}
+		}
+	}
+}
+
+void ABuildManager::SearchHappinessFacility_Resident(APlaceableObjectBase* PlaceableObject)
+{
+	if(IsValid(PlaceableObject))
+	{
+		// 현재 건물의 cell을 key로 가진 행복도 data가 있는지 체크
+		TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(PlaceableObject->GetActorLocation()),
+				PlaceableObject->GetObjectSize()); // 행복 시설 반경만큼 cell 확인
+		
+		for(FIntPoint ObjectCell : CellsforBuild)
+		{
+			TArray<int32> HappinessType;
+
+			if(HappinessTypeData.Num() > 0 && HappinessTypeData.Contains(ObjectCell))
+			{
+				HappinessTypeData.MultiFind(ObjectCell, HappinessType);
+			}
+			
+			for(int32 types : HappinessType)
+			{
+				PlaceableObject->OwnerofHappiness.Add(types);
+			}
+		}
+	}
+	PlaceableObject->K2_OnUpdateHappinessData();
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -378,11 +502,16 @@ void ABuildManager::SelectPlaceableObject()
 			if (IsValid(GetSelectedPlaceableObject()))
 			{
 				if (GetPlaceableObjectUnderCursor() != GetSelectedPlaceableObject())
+				{
+					GetSelectedPlaceableObject()->K2_OnHideDetailWidget();
 					GetSelectedPlaceableObject()->SetObjectSelectedMode(false); // 기존에 선택된 Object는 비워줌.
+				}
 			}
 			SetSelectedPlaceableObject(PlaceableObjectUnderCursor); // 커서 아래있는 오브젝트가 현재 선택된 오브젝트로 변경
 			GridSystemComponent->SetbPlaceableObjectSelected(true);
 			GetSelectedPlaceableObject()->SetObjectSelectedMode(true);
+			// 건축 상세 UI 띄우기
+			GetSelectedPlaceableObject()->K2_OnDisplayDetailWidget();
 			// 클릭시 Outline, Material Color 변경
 			SetOutlineColor(1);
 			if(IsValid(GetPCI()))
@@ -394,6 +523,7 @@ void ABuildManager::SelectPlaceableObject()
 			GridSystemComponent->SetbPlaceableObjectSelected(false); // 선택된 상태가 아닌 것으로 판단
 			if (IsValid(GetSelectedPlaceableObject())) 
 			{
+				GetSelectedPlaceableObject()->K2_OnHideDetailWidget();
 				GetSelectedPlaceableObject()->SetObjectSelectedMode(false);
 				SetSelectedPlaceableObject(nullptr);
 			}
@@ -411,6 +541,10 @@ void ABuildManager::DeselectPlaceableObject()
 		{
 			GetSelectedPlaceableObject()->SwapObjectHighlighting(true);
 		}
+		/*if(GetSelectedPlaceableObject()->GetIsConstructing())
+			GetSelectedPlaceableObject()->K2_OnHideConstructionWidget();
+		else*/
+		GetSelectedPlaceableObject()->K2_OnHideDetailWidget();
 		SetSelectedPlaceableObject(nullptr);
 	}
 }
@@ -522,7 +656,6 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 						SelectedArr[x][y] = pattern3[x][y];
 				}
 			}
-			
 			int x = -1;
 			for(int i = X; i <= X + 7; i++ )
 			{
@@ -595,7 +728,6 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 					}
 					else if(SelectedArr[x][y] == 2)
 					{
-						
 						// 빨간색
 						// SetCustomDataValue - R Parameter
 						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, 1.0f);
@@ -605,7 +737,6 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 2, 0.0f);
 						FIntPoint GetTileMapCells = GridSystemComponent->GetCellfromWorldLocation(TileTransform.GetLocation());
 						SetupTileMapData(GetTileMapCells, 2);
-						
 					}
 					
 				}
@@ -615,7 +746,35 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 	
 }
 
-
+void ABuildManager::SetupNatural()
+{
+	TArray<AActor*> AllActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANaturalObject::StaticClass(), AllActors);
+	
+	for(auto actor : AllActors)
+	{
+		switch (Cast<ANaturalObject>(actor)->ResourceType)
+		{
+			case 0:
+				FIntPoint ResourceTreeCell = GridSystemComponent->GetCellfromWorldLocation(actor->GetActorLocation());
+				ResourceTypeData.Add(ResourceTreeCell, 0);
+				break;
+			case 1:
+				FIntPoint ResourceCliffCell = GridSystemComponent->GetCellfromWorldLocation(actor->GetActorLocation());
+				ResourceTypeData.Add(ResourceCliffCell, 1);
+				break;
+			case 2:
+				FIntPoint ResourceIronMineCell = GridSystemComponent->GetCellfromWorldLocation(actor->GetActorLocation());
+				ResourceTypeData.Add(ResourceIronMineCell, 2);
+				break;
+			case 3:
+				FIntPoint ResourceCoalMineCell = GridSystemComponent->GetCellfromWorldLocation(actor->GetActorLocation());
+				ResourceTypeData.Add(ResourceCoalMineCell, 3);
+				break;
+		}
+		
+	}
+}
 
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -642,16 +801,46 @@ void ABuildManager::DrawPlacementIndicators()
 		float BaseBuildLocationLOCAL = CellLocation.Z;
 		GridSystemComponent->GetActivePlacer()->ObjectMesh->SetWorldLocation(FVector(CenterIndicators.X, CenterIndicators.Y, BaseBuildLocationLOCAL));
 		TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GetCellUnderCursor(), GridSystemComponent->GetActivePlacer()->GetObjectSize());
-		int SuccessCount = 0;
+		// Object Cell Location setting
+		GridSystemComponent->GetActivePlacer()->ObjectCellLocation = CellsforBuild;
+		bool IsPossible = false;
+		for (int32 Index = 0; Index != CellsforBuild.Num(); Index++)
+		{
+			if(CheckResourceMapData(GridSystemComponent->GetActivePlacer()->GetResourceType(), CellsforBuild[Index]))
+				IsPossible = true;
+		}
+		
 		for (int32 Index = 0; Index != CellsforBuild.Num(); Index++)
 		{
 			bool bSuccessforIndicators = false;
 			FVector CellLocationLOCAL = GridSystemComponent->GetCellLocation(CellsforBuild[Index], GetLocationUnderCursorCamera(),bSuccessforIndicators);
 			GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetWorldLocation(CellLocationLOCAL);
-			
-			if(bSuccessforIndicators && CheckTileMapData(CellsforBuild[Index]) )
+
+			// 생산 시설의 경우 토지의 비옥도 체크
+			if(bSuccessforIndicators && GridSystemComponent->GetActivePlacer()->GetObjectData()->IsProductionFacility)
 			{
-				SuccessCount++;
+				if(CheckTileMapData(CellsforBuild[Index]))
+				{
+					// 해당 공간에 각 Indicator Cell들을 놓을 수 있는지
+					if(CheckOccupancyData(CellsforBuild[Index])==false)
+					{
+						GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceAcceptedMaterial);
+					}
+					else
+					{
+						GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceRejectedMaterial);
+						GridSystemComponent->SetbBuildObjecEnabled(false);
+					}	
+				}
+				else
+				{
+					GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceRejectedMaterial);
+					GridSystemComponent->SetbBuildObjecEnabled(false);
+				}
+			}
+			// Resource가 필요한 Object인지 확인
+			else if(bSuccessforIndicators && IsPossible)
+			{
 				// 해당 공간에 각 Indicator Cell들을 놓을 수 있는지
 				if(CheckOccupancyData(CellsforBuild[Index])==false)
 				{
@@ -668,11 +857,10 @@ void ABuildManager::DrawPlacementIndicators()
 				GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceRejectedMaterial);
 				GridSystemComponent->SetbBuildObjecEnabled(false);
 			}
+			
 		}
 	}
 }
-
-
 
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -735,6 +923,23 @@ bool ABuildManager::CheckTileMapData(FIntPoint Cell)
 	return true;
 }
 
+bool ABuildManager::CheckResourceMapData(int32 ActivePlacerResourceType, FIntPoint Cell)
+{
+	// 해당 셀이 Resource가 있는지 체크
+	if (ResourceTypeData.Contains(Cell))
+	{
+		//현재 셀의 Resouorce Type과 현재 오브젝트과 키 확인
+		const int32& Value = ResourceTypeData[Cell];
+		if(Value != ActivePlacerResourceType)
+			return false;
+		else
+			return true;
+	}
+	else if(ActivePlacerResourceType != -1)
+		return false;
+	return true;
+}
+
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SetupObjectData
@@ -767,14 +972,58 @@ void ABuildManager::DestorySelectedPlaceableObject()
 			FConstructionCost ReturnResources = FConstructionCost(SelectedObjectData.Gold * Percent / 100, FFoodData(SelectedObjectData.Food.Rice * Percent / 100,
 				SelectedObjectData.Food.Fruit * Percent / 100,SelectedObjectData.Food.Meat * Percent / 100),
 				SelectedObjectData.Wood * Percent / 100, SelectedObjectData.Rock * Percent / 100, SelectedObjectData.Iron * Percent / 100,SelectedObjectData.Coal * Percent / 100,
-				FCitizen(SelectedObjectData.Citizen.TotalNum * Percent / 100, SelectedObjectData.Citizen.UsedNum * Percent / 100 , SelectedObjectData.Citizen.Happiness * Percent / 100, SelectedObjectData.Citizen.Health * Percent / 100)
+				SelectedObjectData.TotalNum * Percent / 100, SelectedObjectData.UsedNum * Percent / 100 
 				);
 			UpdateResourcesValue(ReturnResources, true, false);
 			for(FIntPoint cells : GetSelectedPlaceableObject()->OccupiedCells)
 			{
 				ChangeOccupancyData(cells, false);
 			}
-			GetSelectedPlaceableObject()->DemolitionPlaceableObject();
+			// 행복도 건물 / 주거 건물을 세운 경우 주거 시설인 object들에 대해서 행복건물 반경에 따라 HappinessTypeData 탐색하기
+			if(GetSelectedPlaceableObject()->HappinessFacilityType != 0) // 행복도 건물인 경우
+			{
+				FIntPoint Range;
+				switch (GetSelectedPlaceableObject()->HappinessFacilityType)
+				{
+				case 0 :
+					break;
+				case 1 : // road
+					Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 3, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 3);
+					break;
+				case 2 : // well
+					Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 3, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 3);
+					break;
+				case 3 : // market
+					Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 4, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 4);
+					break;
+				case 4 : // church
+					Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 7, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 7);
+					break;
+				case 5 : // bank
+					Range = FIntPoint(GetPlaceableObjectBase()->GetObjectData()->ObjectSize.X * 5, GetPlaceableObjectBase()->GetObjectData()->ObjectSize.Y * 5);
+					break;
+				}
+				TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetSelectedPlaceableObject()->GetActorLocation()),
+					Range); // 행복 시설 반경만큼 cell 확인
+				
+				for(FIntPoint cells : CellsforBuild)
+				{
+					if(ObjectData.Contains(cells) && ObjectData[cells]->IsResidentFacility == true)
+					{
+						TArray<int32> HappinessType;
+						HappinessTypeData.MultiFind(cells, HappinessType);
+						for(int32 types : HappinessType)
+							ObjectData[cells]->OwnerofHappiness.Remove(types); 
+					}
+					HappinessTypeData.Remove(cells);
+				}
+				for(FIntPoint ObjectCells : CellsforBuild)
+				{
+					if(ObjectData.Contains(ObjectCells))
+						ObjectData[ObjectCells]->K2_OnUpdateHappinessData();
+				}
+				GetSelectedPlaceableObject()->DemolitionPlaceableObject();
+			}
 		}
 	}
 }
@@ -798,10 +1047,6 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 		FFoodData AddFood = FFoodData(GetPlayerResources().Food.Rice+Resource.Food.Rice,
 			GetPlayerResources().Food.Fruit+ Resource.Food.Fruit,
 			GetPlayerResources().Food.Meat+ Resource.Food.Meat);
-		FCitizen AddCitizen = FCitizen(GetPlayerResources().Citizen.TotalNum + Resource.Citizen.TotalNum,
-			GetPlayerResources().Citizen.UsedNum - Resource.Citizen.UsedNum,
-			GetPlayerResources().Citizen.Happiness + Resource.Citizen.Happiness,
-				GetPlayerResources().Citizen.Health + Resource.Citizen.Health);
 
 		FConstructionCost AddConstruction = FConstructionCost(GetPlayerResources().Gold+Resource.Gold,
 			AddFood,
@@ -809,7 +1054,9 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 			GetPlayerResources().Rock+Resource.Rock,
 			GetPlayerResources().Iron+Resource.Iron,
 			GetPlayerResources().Coal+Resource.Coal,
-			AddCitizen);
+			GetPlayerResources().TotalNum + Resource.TotalNum,
+			GetPlayerResources().UsedNum - Resource.UsedNum
+			);
 		
 		SetPlayerResources(AddConstruction);
 	}
@@ -818,10 +1065,6 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 		FFoodData SubFood = FFoodData(FMath::Clamp(GetPlayerResources().Food.Rice-Resource.Food.Rice,0,GetPlayerResources().Food.Rice-Resource.Food.Rice),
 		FMath::Clamp(GetPlayerResources().Food.Fruit-Resource.Food.Fruit,0,GetPlayerResources().Food.Fruit-Resource.Food.Fruit),
 		FMath::Clamp(GetPlayerResources().Food.Meat-Resource.Food.Meat,0,GetPlayerResources().Food.Meat-Resource.Food.Meat));
-		FCitizen SubCitizon = FCitizen(FMath::Clamp(GetPlayerResources().Citizen.TotalNum - Resource.Citizen.TotalNum,0,GetPlayerResources().Citizen.TotalNum - Resource.Citizen.TotalNum),
-		FMath::Clamp(GetPlayerResources().Citizen.UsedNum + Resource.Citizen.UsedNum,0,GetPlayerResources().Citizen.UsedNum + Resource.Citizen.UsedNum),
-			FMath::Clamp(GetPlayerResources().Citizen.Happiness - Resource.Citizen.Happiness,0,GetPlayerResources().Citizen.Happiness - Resource.Citizen.Happiness),
-			FMath::Clamp(GetPlayerResources().Citizen.Health - Resource.Citizen.Health,0,GetPlayerResources().Citizen.Health - Resource.Citizen.Health));
 		
 		FConstructionCost SubConstruction = FConstructionCost(FMath::Clamp(GetPlayerResources().Gold-Resource.Gold, 0 , GetPlayerResources().Gold-Resource.Gold),
 			SubFood,
@@ -829,7 +1072,9 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 			FMath::Clamp(GetPlayerResources().Rock-Resource.Rock, 0 , GetPlayerResources().Rock-Resource.Rock),
 			FMath::Clamp(GetPlayerResources().Iron-Resource.Iron, 0 , GetPlayerResources().Iron-Resource.Iron),
 			FMath::Clamp(GetPlayerResources().Coal-Resource.Coal, 0 , GetPlayerResources().Coal-Resource.Coal),
-			SubCitizon);
+			FMath::Clamp(GetPlayerResources().TotalNum - Resource.TotalNum,0,GetPlayerResources().TotalNum - Resource.TotalNum),
+			FMath::Clamp(GetPlayerResources().UsedNum + Resource.UsedNum,0,GetPlayerResources().UsedNum + Resource.UsedNum)
+			);
 
 		SetPlayerResources(SubConstruction);
 	}
@@ -838,10 +1083,6 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 		FFoodData Food = FFoodData(FMath::Clamp(Resource.Food.Rice,0,Resource.Food.Rice),
 		FMath::Clamp(Resource.Food.Fruit,0,Resource.Food.Fruit),
 		FMath::Clamp(Resource.Food.Meat,0,Resource.Food.Meat));
-		FCitizen Citizen = FCitizen(FMath::Clamp(Resource.Citizen.TotalNum,0,Resource.Citizen.TotalNum),
-		FMath::Clamp(Resource.Citizen.UsedNum,0,Resource.Citizen.UsedNum),
-			FMath::Clamp(Resource.Citizen.Happiness,0,Resource.Citizen.Happiness),
-			FMath::Clamp(Resource.Citizen.Health,0,Resource.Citizen.Health));
 		
 		FConstructionCost Construction = FConstructionCost(FMath::Clamp(Resource.Gold, 0, Resource.Gold),
 			Food,	
@@ -849,7 +1090,9 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 		FMath::Clamp(Resource.Rock, 0, Resource.Rock),
 		FMath::Clamp(Resource.Iron, 0, Resource.Iron),
 		FMath::Clamp(Resource.Coal, 0, Resource.Coal),
-			Citizen);
+		FMath::Clamp(Resource.TotalNum,0,Resource.TotalNum),
+		FMath::Clamp(Resource.UsedNum,0,Resource.UsedNum)
+		);
 
 		SetPlayerResources(Construction);
 	}
@@ -914,10 +1157,13 @@ void ABuildManager::SetOutlineColor(int32 ObjectSide)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 bool ABuildManager::CheckifEnoughResources(FConstructionCost InCost)
 {
-	return GetPlayerResources().Gold - InCost.Gold >= 0 && GetPlayerResources().Food.Fruit - InCost.Food.Fruit >=0 && GetPlayerResources().Food.Rice - InCost.Food.Rice >=0
+	
+	bool CheckPlayerResource = GetPlayerResources().Gold - InCost.Gold >= 0 && GetPlayerResources().Food.Fruit - InCost.Food.Fruit >=0 && GetPlayerResources().Food.Rice - InCost.Food.Rice >=0
 		&& GetPlayerResources().Food.Meat - InCost.Food.Meat >=0 && GetPlayerResources().Coal - InCost.Coal >= 0 && GetPlayerResources().Iron - InCost.Iron >= 0
 		&& GetPlayerResources().Rock - InCost.Rock >=0 && GetPlayerResources().Wood - InCost.Wood >=0
-		&& (GetPlayerResources().Citizen.TotalNum- GetPlayerResources().Citizen.UsedNum) -  InCost.Citizen.UsedNum >= 0;
+		&& (GetPlayerResources().TotalNum- GetPlayerResources().UsedNum) -  InCost.UsedNum >= 0;
+
+	return CheckPlayerResource;
 }
 
 

@@ -25,22 +25,21 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actors", meta = (AllowPrivateAccess = "true"))
-	TArray<AActor*> Units;
+	TSet<AActor*> Units; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Construction", meta = (AllowPrivateAccess = "true"))
-	TArray<AActor*> Rocks;
+	TSet<AActor*>  Rocks;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Construction", meta = (AllowPrivateAccess = "true"))
-	TArray<AActor*> Woods;
+	TSet<AActor*>  Woods;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Construction", meta = (AllowPrivateAccess = "true"))
-	TArray<AActor*> Irons;
+	TSet<AActor*>  Irons;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actors", meta = (AllowPrivateAccess = "true"))
-	TArray<AActor*> Rices;
+	TSet<AActor*> Rices;
 	
-
-
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actors", meta = (AllowPrivateAccess = "true"))
+	TSet<AActor*>  Coals;
 		
 };

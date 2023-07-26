@@ -46,6 +46,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
 	void ChangeObjectforPlacement(FName NewObjectRow);
 
+	UFUNCTION(BlueprintCallable, Category = "GridSystem")
+	FVector2D GetCenterofCell(FIntPoint InCell);
+
 	/* Interact Functions */
 	UFUNCTION(BlueprintCallable, Category = "Main")
 	void CancelDragObjectPlacing();
