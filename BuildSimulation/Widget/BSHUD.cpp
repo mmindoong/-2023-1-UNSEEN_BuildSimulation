@@ -11,7 +11,7 @@ UBSHUD::UBSHUD(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitia
 {
 }
 
-/*void UBSHUD::NativeConstruct()
+void UBSHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
@@ -22,9 +22,9 @@ UBSHUD::UBSHUD(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitia
 		HUDPawn->SetupHUDWidget(this); //Pawn에서 Setup시켜주고 바인딩까지 호출
 	}
 	
-}*/
+}
 
 void UBSHUD::UpdateResource(const FConstructionCost& InPlayerResource)
 {
-	//ResourceWidget->UpdateResource(InPlayerResource, PlayerResource);
+	ResourceWidget->UpdateResource(InPlayerResource, PlayerResource);
 }

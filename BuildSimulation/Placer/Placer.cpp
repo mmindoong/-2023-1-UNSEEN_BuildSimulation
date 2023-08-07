@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "PlacerObjectBase.h"
+#include "Placer.h"
 
 #include "Build/BuildManager.h"
 #include "Game/BSGameSingleton.h"
@@ -16,7 +16,7 @@
   
   @Modifies: [PlaceableObjectTable, ObjectNameInTable]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-APlacerObjectBase::APlacerObjectBase()
+APlacer::APlacer()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -71,29 +71,14 @@ APlacerObjectBase::APlacerObjectBase()
   
   @Summary:  Called when the game starts or when spawned
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::BeginPlay()
+void APlacer::BeginPlay()
 {
 	Super::BeginPlay();
 
 	// Binding UpdateResourceevent, If there are not enough resources to build, the building material will turn red
 	
-	
 }
 
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   Tick
-  
-  @Summary:  Called every frame
-  
-  @Args:     float DeltaTime
-			 Delta Seconds between frames
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   SetupObjectPlacer
@@ -104,10 +89,10 @@ void APlacerObjectBase::Tick(float DeltaTime)
   
   @Modifies: [ObjectData, PlaceableObjectClass, ObjectSize]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::SetupObjectPlacer()
+void APlacer::SetupObjectPlacer()
 {
 	FName LocalRowName = GetRowName();
-	FPlaceableObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FPlaceableObjectData>(LocalRowName, "");
+	FObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FObjectData>(LocalRowName, "");
 	
 	if (OutRow != nullptr)
 	{
@@ -138,10 +123,9 @@ void APlacerObjectBase::SetupObjectPlacer()
   
   @Modifies: [ObjectMesh]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::ActivateObjectPlacer()
+void APlacer::ActivateObjectPlacer()
 {
 	SetActorTickEnabled(true);
-	
 	ObjectMesh->SetVisibility(true, true);
 }
 
@@ -152,7 +136,7 @@ void APlacerObjectBase::ActivateObjectPlacer()
   
   @Summary:  Destroy Actor
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::DeactivateObjectPlacer()
+void APlacer::DeactivateObjectPlacer()
 {
 	K2_DestroyActor();
 }
@@ -169,7 +153,7 @@ void APlacerObjectBase::DeactivateObjectPlacer()
   
   @Modifies: [ObjectMesh, BuildDirection]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::RotateObjectPlacer(bool bLeft)
+void APlacer::RotateObjectPlacer(bool bLeft)
 {
 	SetObjectSize(FIntPoint(GetObjectSize().Y, GetObjectSize().X));
 	float DeltaRotationYaw = bLeft ? -90.0f : 90.0f;
@@ -180,22 +164,6 @@ void APlacerObjectBase::RotateObjectPlacer(bool bLeft)
 	SetBuildDirection(Direction3);
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   HidePlaceIndicators
-  
-  @Category: Parent Functions
-  
-  @Summary:  Hide Placer's Material
-  
-  @Modifies: [PlaceIndicators]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::HidePlaceIndicators()
-{
-	for(auto element : PlaceIndicators)
-	{
-		element->SetVisibility(false);
-	}
-}
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   @Method:   CreateIndicatorMesh
@@ -208,7 +176,7 @@ void APlacerObjectBase::HidePlaceIndicators()
   
   @Returns:  UStaticMeshComponent*
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacerObjectBase::CreateIndicatorMesh(bool bPlaceEnabled)
+void APlacer::CreateIndicatorMesh(bool bPlaceEnabled)
 {
 	UMaterialInterface* MeshMaterial = bPlaceEnabled ? PlaceAcceptedMaterial : PlaceRejectedMaterial;
 	UStaticMeshComponent* NewComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass()); 
@@ -220,12 +188,11 @@ void APlacerObjectBase::CreateIndicatorMesh(bool bPlaceEnabled)
 		NewComponent->SetMaterial(0, MeshMaterial);
 		NewComponent->SetVisibility(true);
 		PlaceIndicators.Add(NewComponent);
-		
 	}
 	
 }
 
-void APlacerObjectBase::UpdateMeshMatDependingAmountOfResources(bool bIsEnoughResource)
+void APlacer::UpdateMeshMatDependingAmountOfResources(bool bIsEnoughResource)
 {
 	if(bIsEnoughResource)
 	{
@@ -243,42 +210,5 @@ void APlacerObjectBase::UpdateMeshMatDependingAmountOfResources(bool bIsEnoughRe
 		}
 	}
 }
-
-/*UStaticMeshComponent* APlacerObjectBase::GetReusuableMesh(TArray<UStaticMeshComponent*> MeshesArray, int32 Index,
-	UStaticMesh* Mesh, bool FreePlace)
-{
-	UMaterialInterface* PlaceMaterial = FreePlace ? PlaceAcceptedMaterial : PlaceRejectedMaterial;
-	if(MeshesArray.Num() > Index)
-	{
-		Index++;
-		UStaticMeshComponent* MeshLOCAL = MeshesArray[Index-1];
-		if(MeshLOCAL->GetMaterial(0) != PlaceMaterial)
-		{
-			MeshLOCAL->SetMaterial(0, PlaceMaterial);
-			MeshLOCAL->SetVisibility(true);
-			return MeshLOCAL;
-		}
-		else
-		{
-			MeshLOCAL->SetVisibility(true);
-			return MeshLOCAL;
-		}
-	}
-	else
-	{
-		UStaticMeshComponent* NewComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass()); 
-		NewComponent->RegisterComponent();
-	
-		if(NewComponent->IsRegistered())
-		{
-			NewComponent->SetStaticMesh(IndicatorMesh);
-			NewComponent->SetMaterial(0, PlaceMaterial);
-			NewComponent->SetVisibility(true);
-			PlaceIndicators.Add(NewComponent);
-			return NewComponent;
-		}
-	}
-}*/
-
 
 

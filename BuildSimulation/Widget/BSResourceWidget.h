@@ -16,7 +16,7 @@ class BUILDSIMULATION_API UBSResourceWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
-/*
+
 public:
 	// Player Resource를 받아서 업데이트 시켜줌, 변경된 값은 HUD의 값을 변경시켜줌
 	void UpdateResource(const FConstructionCost& InPlayerResource,  FConstructionCost& PlayerResource);
@@ -35,6 +35,6 @@ private:
 	UTextBlock* IronText;
 	UTextBlock* RockText;
 	UTextBlock* CoalText;
-	*/
+	
 };
 

@@ -21,15 +21,9 @@ public:
 	ABSPlayerController();
 
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
 	
 	UFUNCTION(BlueprintImplementableEvent, Category = Game, Meta = (DisplayName = "OnBuildEvnet")) //bp에서 Display 시킬 함수 이름
 	void K2_OnBuildEvent();
 	// HUD Section
-protected:
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=HUD)
-	TSubclassOf<class UBSHUD> BSHUDWidgetClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=HUD)
-	TObjectPtr<class UBSHUD> BSHUDWidget;*/
 };

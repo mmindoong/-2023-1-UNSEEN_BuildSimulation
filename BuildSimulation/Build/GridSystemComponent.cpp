@@ -55,6 +55,7 @@ FVector UGridSystemComponent::GetCellLocation(FIntPoint InCell, FVector InCamera
 	TArray<AActor*> ActorsToIgnore;
 	FCollisionQueryParams Params;
 	
+	
 	bool IsHitResult = UKismetSystemLibrary::LineTraceSingle(
 		GetWorld(),
 		StartLocation,
@@ -68,11 +69,11 @@ FVector UGridSystemComponent::GetCellLocation(FIntPoint InCell, FVector InCamera
 		FLinearColor::Red,
 		FLinearColor::Green,
 		0.5f);
-		
+	
+	
 	if(IsHitResult == true)
 	{
-		float RoundHeight = RoundHeightToGridStep(HitResult.Location.Z);
-		LocationLOCAL = FVector(LocationLOCAL.X, LocationLOCAL.Y, RoundHeight);
+		LocationLOCAL = FVector(LocationLOCAL.X, LocationLOCAL.Y, HitResult.Location.Z + 10);
 		bSuccess = true;
 		return LocationLOCAL;
 	}
@@ -208,7 +209,7 @@ void UGridSystemComponent::ActivateBuildingTool(FName ObjectforBuilding)
 
 		if(GetWorld())
 		{
-			SetActivePlacer(Cast<APlacerObjectBase>(GetWorld()->SpawnActor<AActor>(APlacerObjectBase::StaticClass(), SpawnLocation, rotator, SpawnParams)));
+			SetActivePlacer(Cast<APlacer>(GetWorld()->SpawnActor<AActor>(APlacer::StaticClass(), SpawnLocation, rotator, SpawnParams)));
 			GetActivePlacer()->SetRowName(GetObjectForPlacement());
 			GetActivePlacer()->SetupObjectPlacer();
 		}
@@ -242,17 +243,10 @@ void UGridSystemComponent::DeactivateBuildingTool()
 {
 	if(GetbBuildToolEnabled())
 	{
-		if(GetbDragStarted()) // ??? ??????????????
-			CancelDragObjectPlacing();
-		else
-		{
-			SetbPlaceableObjectSelected(false);
-			SetbBuildToolEnabled(false);
-			if(IsValid(GetActivePlacer()))
-			{
-				GetActivePlacer()->DeactivateObjectPlacer();
-			}
-		}
+		SetbPlaceableObjectSelected(false);
+		SetbBuildToolEnabled(false);
+		if(IsValid(GetActivePlacer()))
+			GetActivePlacer()->DeactivateObjectPlacer();
 	}
 }
 
@@ -284,10 +278,9 @@ void UGridSystemComponent::ActivateDemolitionTool()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void UGridSystemComponent::DeactivateDemolitionTool()
 {
-	if(GetbDemolitionToolEnabled()) //???? ?????????????? ???
+	if(GetbDemolitionToolEnabled()) 
 		{
 		SetbDemolitionToolEnabled(false);
-		//todo : ??? ??? ??? ?? CallUpdatePlaceableObjectUnderCursor(GetPlaceableObjectUnderCursor(), false); 
 		}
 }
 
@@ -310,7 +303,7 @@ void UGridSystemComponent::ChangeObjectforPlacement(FName NewObjectRow)
 	if(GetObjectForPlacement() != FName("None"))
 	{
 		FName LocalRowName = GetObjectForPlacement();
-		FPlaceableObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FPlaceableObjectData>(LocalRowName, "");
+		FObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FObjectData>(LocalRowName, "");
 		if (OutRow != nullptr)
 		{
 			SetbObjectForPlacementIsSelected(true);
@@ -332,28 +325,6 @@ FVector2D UGridSystemComponent::GetCenterofCell(FIntPoint InCell)
 	return FVector2D(locationX, locationY);
 
 }
-
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   CancelDragObjectPlacing
-  
-  @Category: Main
-  
-  @Summary:  Detect Cancel Drag and Hide activated Placer Actor
-
-  @Modifies: [bDragWasInterrupted]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void UGridSystemComponent::CancelDragObjectPlacing()
-{
-	if(GetbInteractStarted())
-	{
-		SetbDragWasInterrupted(true); // Drag Cancel Detect
-		if(IsValid(GetActivePlacer()))
-		{
-			GetActivePlacer()->HidePlaceIndicators();
-		}
-	}
-}
-
 
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -410,25 +381,6 @@ FVector2D UGridSystemComponent::GetCellCenterToLocation(FIntPoint InCell)
 	return FVector2D(LocationX, LocationY);
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   RoundHeightToGridStep
-  
-  @Summary:  Local Function for return grid round height by tracing new height
-  
-  @Args:     float InNewHeight
-  
-  @Returns:  float
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-float UGridSystemComponent::RoundHeightToGridStep(float InNewHeight)
-{
-	if(UKismetMathLibrary::NearlyEqual_FloatFloat(GetVerticalStep(), 0.0f, 0.01f))
-	{
-		return InNewHeight;
-	}
-	else
-	{
-		return FMath::RoundToInt32(InNewHeight / GetVerticalStep()) * GetVerticalStep();
-	}
-}
+
 
 

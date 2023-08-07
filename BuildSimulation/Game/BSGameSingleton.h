@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Data/PlaceableObjectsData.h"
+#include "Data/ObjectData.h"
 #include "UObject/NoExportTypes.h"
 #include "BSGameSingleton.generated.h"
 

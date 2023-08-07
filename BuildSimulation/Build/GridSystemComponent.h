@@ -4,8 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Engine/DataTable.h"
-#include "Placer/PlacerObjectBase.h"
+#include "Placer/Placer.h"
 #include "PlaceableObject/PlaceableObjectBase.h"
 #include "GridSystemComponent.generated.h"
 
@@ -48,10 +47,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "GridSystem")
 	FVector2D GetCenterofCell(FIntPoint InCell);
-
-	/* Interact Functions */
-	UFUNCTION(BlueprintCallable, Category = "Main")
-	void CancelDragObjectPlacing();
 	
 	/* Tool Functions */
 	UFUNCTION(BlueprintCallable, Category="Tool")
@@ -66,7 +61,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Tool")
 	void DeactivateDemolitionTool();
 	
-
 	/* Public Getter & Setter */
 	FORCEINLINE const FVector GetGridCenterLocation() const { return GridCenterLocation; }
 	FORCEINLINE void SetGridCenterLocation(const FVector& InLocation) { GridCenterLocation = InLocation; }
@@ -80,8 +74,8 @@ public:
 	FORCEINLINE FVector GetGridBottomLeftCornerLocation() const { return GridBottomLeftCornerLocation; }
 	FORCEINLINE void SetGridBottomLeftCornerLocation(const FVector& InLocation) { GridBottomLeftCornerLocation = InLocation; }
 	
-	FORCEINLINE APlacerObjectBase* GetActivePlacer() const { return ActivePlacer; }
-	FORCEINLINE void SetActivePlacer(APlacerObjectBase* InActivatePlacer) { ActivePlacer = InActivatePlacer; }
+	FORCEINLINE APlacer* GetActivePlacer() const { return ActivePlacer; }
+	FORCEINLINE void SetActivePlacer(APlacer* InActivatePlacer) { ActivePlacer = InActivatePlacer; }
 
 	FORCEINLINE FName GetObjectForPlacement() const { return ObjectForPlacement; }
 	FORCEINLINE void SetObjectForPlacement(FName InObjectForPlacement) { ObjectForPlacement = InObjectForPlacement; }
@@ -101,9 +95,6 @@ public:
 
 	FORCEINLINE bool GetbBuildToolEnabled() const { return bBuildToolEnabled; }
 	FORCEINLINE void SetbBuildToolEnabled(const bool& InBuildToolEnabled) { bBuildToolEnabled = InBuildToolEnabled; }
-
-	FORCEINLINE bool GetbInteractStarted() const { return bInteractStarted; }
-	FORCEINLINE void SetbInteractStarted(const bool& InInteractStarted) { bInteractStarted = InInteractStarted; }
 	
 	FORCEINLINE bool GetbPlacerIndicatorEnabled() const { return bPlacerIndicatorEnabled; }
 	FORCEINLINE void SetbPlacerIndicatorEnabled(bool InbPlacerIndicatorEnabled) { bPlacerIndicatorEnabled =InbPlacerIndicatorEnabled; }
@@ -111,16 +102,10 @@ public:
 	FORCEINLINE bool GetbDemolitionToolEnabled() const { return bDemolitionToolEnabled; }
 	FORCEINLINE void SetbDemolitionToolEnabled(const bool& InDemolitionToolEnabled) { bDemolitionToolEnabled = InDemolitionToolEnabled; }
 
-	FORCEINLINE bool GetbDragStarted() const { return bDragStarted; }
-	FORCEINLINE void SetbDragStarted(bool InbDragStarted) { bDragStarted = InbDragStarted; }
-
-	FORCEINLINE bool GetbDragWasInterrupted() const { return bDragWasInterrupted; }
-	FORCEINLINE void SetbDragWasInterrupted(bool InbDragWasInterrupted) { bDragWasInterrupted = InbDragWasInterrupted; }
-
 	FORCEINLINE bool GetbPlaceableObjectSelected() const { return bPlaceableObjectSelected; }
 	FORCEINLINE void SetbPlaceableObjectSelected(const bool& InPlaceableObjectSelected) { bPlaceableObjectSelected = InPlaceableObjectSelected; }
 private:
-	FPlaceableObjectData* PlaceableObjectData;
+	FObjectData* PlaceableObjectData;
 	
 	/* Settings Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
@@ -140,13 +125,11 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
 	float EndTraceHeight = -3000.0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Grid", meta = (AllowPrivateAccess = "true"))
-	float VerticalStep;
+	
 	
 	/* Object Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
-	APlacerObjectBase* ActivePlacer;
+	APlacer* ActivePlacer;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
 	FName ObjectForPlacement;
@@ -176,16 +159,7 @@ private:
 
 	/* Interact Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool bInteractStarted = false;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
 	bool bPlaceableObjectSelected = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool bDragStarted = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact", meta = (AllowPrivateAccess = "true"))
-	bool bDragWasInterrupted = false;
 
 	
 	/* Local Function Library */
@@ -195,9 +169,6 @@ private:
 	
 	FVector2D GetCellCenterToLocation(FIntPoint InCell);
 	
-	float RoundHeightToGridStep(float InNewHeight);
-	
-	
 
 	/* Getter & Setter */
 	// Grid System Variables
@@ -206,19 +177,10 @@ private:
 
 	FORCEINLINE float GetEndTraceHeight() const { return EndTraceHeight; }
 	FORCEINLINE void SetInEndTraceHeight(float InEndTraceHeight) { EndTraceHeight = InEndTraceHeight; }
+	
+	FORCEINLINE FObjectData* GetPlaceableObjectData() const { return PlaceableObjectData; }
+	FORCEINLINE void SetPlaceableObjectData(FObjectData* InPlaceableObjectData) { PlaceableObjectData = InPlaceableObjectData; }
 
-	FORCEINLINE float GetVerticalStep() const { return VerticalStep; }
-	FORCEINLINE void SetVerticalStep(float InVerticalStep) { VerticalStep = InVerticalStep; }
-	
-	FORCEINLINE FPlaceableObjectData* GetPlaceableObjectData() const { return PlaceableObjectData; }
-	FORCEINLINE void SetPlaceableObjectData(FPlaceableObjectData* InPlaceableObjectData) { PlaceableObjectData = InPlaceableObjectData; }
-	
-	
-
-	/* Public Getter & Setter */
-	
-
-	
 	
 };
 

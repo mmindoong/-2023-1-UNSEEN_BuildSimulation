@@ -5,7 +5,7 @@
 
 
 
-/*void UBSResourceWidget::UpdateResource(const FConstructionCost& InPlayerResource,  FConstructionCost& PlayerResource)
+void UBSResourceWidget::UpdateResource(const FConstructionCost& InPlayerResource,  FConstructionCost& PlayerResource)
 {
 	// Set Resource Amount 변수, 실제 UI업데이트는 bp에서 진행
 	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Blue, FString::Printf(TEXT("UpdateResource")));
@@ -46,4 +46,4 @@ void UBSResourceWidget::NativeConstruct()
 	CoalText = Cast<UTextBlock>(GetWidgetFromName(TEXT("CoalAmountText")));
 	IronText = Cast<UTextBlock>(GetWidgetFromName(TEXT("IronAmountText")));
 
-}*/
+}

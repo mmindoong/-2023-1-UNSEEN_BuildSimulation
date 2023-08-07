@@ -5,9 +5,7 @@
 #include "Background/NaturalObject.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Core/BSPlayerController.h"
-#include "Engine/PostProcessVolume.h"
 #include "Game/BSGameSingleton.h"
-#include "Kismet/KismetMaterialLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Materials/MaterialParameterCollection.h"
@@ -97,20 +95,7 @@ void ABuildManager::Tick(float DeltaTime)
 		{
 			DrawPlacementIndicators();
 		}
-		if(GridSystemComponent->GetbDemolitionToolEnabled())
-		{
-			if(GridSystemComponent->GetbInteractStarted())
-			{
-				FTimerHandle WaitHandle;
-				float WaitTime = 0.07f; 
-				GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
-				{
-					//todo : Destroy Object Under Cursor
-
-				}), WaitTime, false); 
-			}
-		}
-		DetectMouseDrag();
+		
 	}
 
 }
@@ -156,7 +141,7 @@ void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* I
 			}
 			else
 			{
-				SetOutlineColor(GetPlaceableObjectUnderCursor()->GetObjectSide());
+				SetOutlineColor();
 				if(IsValid(GetPCI()))
 					GetPCI()->SetScalarParameterValue(FName("EnableShading"), -0.5f);
 			}
@@ -178,14 +163,11 @@ void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* I
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::PressedLMB()
 {
-	
-	GridSystemComponent->SetbInteractStarted(true); // 클릭했는지 Released에서 확인용
 	SelectPlaceableObject();
 	if(GridSystemComponent->GetbObjectForPlacementIsSelected())
 	{
-		GridSystemComponent->SetbDragWasInterrupted(false);
 		FHitResult ResultCamera;
-		if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery2, bTraceComplex, ResultCamera))
+		if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery2, false, ResultCamera))
 		{
 			if(ResultCamera.bBlockingHit)
 				SetStartLocationUnderCursor(ResultCamera.Location);
@@ -206,27 +188,22 @@ void ABuildManager::PressedLMB()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::ReleasedLMB()
 {
-	if(GridSystemComponent->GetbInteractStarted())
+	if(GridSystemComponent->GetbBuildToolEnabled() && GridSystemComponent->GetbObjectForPlacementIsSelected())
 	{
-		if(GridSystemComponent->GetbBuildToolEnabled() && GridSystemComponent->GetbObjectForPlacementIsSelected())
+		if(IsValid(GridSystemComponent->GetActivePlacer()))
 		{
-			if(IsValid(GridSystemComponent->GetActivePlacer()))
+			if(CheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost))
 			{
-				if(CheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost))
-				{
-					BuildPlaceableObject();
-				}
-				else
-				{
-					ABSPlayerController* Player = Cast<ABSPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-					Player->K2_OnBuildEvent();
-				}
+				BuildPlaceableObject();
+			}
+			else
+			{
+				ABSPlayerController* Player = Cast<ABSPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+				Player->K2_OnBuildEvent();
 			}
 		}
-		GridSystemComponent->SetbInteractStarted(false);
-		GridSystemComponent->SetbDragStarted(false);
-		GridSystemComponent->SetbDragWasInterrupted(false);
 	}
+	
 }
 
 
@@ -421,9 +398,8 @@ void ABuildManager::SearchHappinessFacility_Resident(APlaceableObjectBase* Place
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::UpdateBuildingManagerValues()
 {
-	//By default, two channels are checked, camera and visibility
 	FHitResult ResultVisiblity;
-	if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery1, bTraceComplex, ResultVisiblity))
+	if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery1, false, ResultVisiblity))
 	{
 		if(ResultVisiblity.bBlockingHit)
 		{
@@ -432,7 +408,7 @@ void ABuildManager::UpdateBuildingManagerValues()
 		}
 	}
 	FHitResult ResultCamera;
-	if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery2, bTraceComplex, ResultCamera))
+	if(GetPlayerController()->GetHitResultUnderCursorByChannel(TraceTypeQuery2, false, ResultCamera))
 	{
 		if(ResultCamera.bBlockingHit)
 		{
@@ -440,9 +416,7 @@ void ABuildManager::UpdateBuildingManagerValues()
 			GridSystemComponent->SetLocationUnderCursorCamera(GetLocationUnderCursorCamera());
 		}
 	}
-
-	//Checking if the cursor has moved to a new grid cell
-	//This is necessary for optimization, checking the area for building a building is done once when the cell under the cursor is changed
+	
 	if( GetCellUnderCursor() != GetLastCellUnderCursor())
 	{
 		SetLastCellUnderCursor(GetCellUnderCursor());
@@ -457,28 +431,6 @@ void ABuildManager::UpdateBuildingManagerValues()
 
 }
 
-/*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
-  @Method:   DetectMouseDrag
-  
-  @Category: Main
-  
-  @Summary:  Set bool DragStart Variable
-
-  @Modifies: [bDragStarted]
-M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::DetectMouseDrag()
-{
-	if(IsValid(GridSystemComponent->GetActivePlacer()))
-	{
-		// Placer가 드래그가능한 상태, BuildManager는 Interact 시작이면서 Drag는 안한 상태
-		if(GridSystemComponent->GetActivePlacer()->GetbCanbeDraggged() && GridSystemComponent->GetbInteractStarted() && GridSystemComponent->GetbDragStarted()==false)
-		{
-			float Squared = UKismetMathLibrary::VSize2DSquared(static_cast<FVector2d>(GetStartLocationUnderCursor() - GetLocationUnderCursorCamera()));
-			if(Squared > GetStartDragInstance()* GetStartDragInstance())
-				GridSystemComponent->SetbDragStarted(true);
-		}
-	}
-}
 
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -513,7 +465,7 @@ void ABuildManager::SelectPlaceableObject()
 			// 건축 상세 UI 띄우기
 			GetSelectedPlaceableObject()->K2_OnDisplayDetailWidget();
 			// 클릭시 Outline, Material Color 변경
-			SetOutlineColor(1);
+			SetOutlineColor();
 			if(IsValid(GetPCI()))
 				GetPCI()->SetScalarParameterValue(FName("EnableShading"), 0.4f);
 		}
@@ -677,7 +629,7 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 					FVector EndLocation =  TileTransformLocation +  FVector(0.0f, 0.0f, -500.0f);;
 					TArray<AActor*> ActorsToIgnore;
 					FCollisionQueryParams Params;
-					bool IsHitResult = UKismetSystemLibrary::LineTraceSingle(
+					/*bool IsHitResult = UKismetSystemLibrary::LineTraceSingle(
 								GetWorld(),
 								StartLocation,
 								EndLocation,
@@ -690,7 +642,26 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 								FLinearColor::Red,
 								FLinearColor::Green,
 								10.0f);
-		
+								*/
+
+					
+					TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // 히트 가능한 오브젝트 유형들.
+					TEnumAsByte<EObjectTypeQuery> Ground_OBJ = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel3);
+					ObjectTypes.Add(Ground_OBJ);
+					bool IsHitResult = UKismetSystemLibrary::LineTraceSingleForObjects(
+							GetWorld(),
+						StartLocation,
+						EndLocation,
+						ObjectTypes,
+						false,
+						ActorsToIgnore,
+						EDrawDebugTrace::None,
+						HitResult,
+						true,
+						FLinearColor::Red,
+						FLinearColor::Green,
+						0.5f);
+					
 					if(IsHitResult == false)
 					{
 						continue;
@@ -967,14 +938,7 @@ void ABuildManager::DestorySelectedPlaceableObject()
 	{
 		if(IsValid(GetSelectedPlaceableObject()))
 		{
-			FConstructionCost SelectedObjectData = GetSelectedPlaceableObject()->GetObjectData()->ConstructionCost;
-			int32 Percent =  GetSelectedPlaceableObject()->GetObjectData()->ReturnResourcesPercent;
-			FConstructionCost ReturnResources = FConstructionCost(SelectedObjectData.Gold * Percent / 100, FFoodData(SelectedObjectData.Food.Rice * Percent / 100,
-				SelectedObjectData.Food.Fruit * Percent / 100,SelectedObjectData.Food.Meat * Percent / 100),
-				SelectedObjectData.Wood * Percent / 100, SelectedObjectData.Rock * Percent / 100, SelectedObjectData.Iron * Percent / 100,SelectedObjectData.Coal * Percent / 100,
-				SelectedObjectData.TotalNum * Percent / 100, SelectedObjectData.UsedNum * Percent / 100 
-				);
-			UpdateResourcesValue(ReturnResources, true, false);
+			UpdateResourcesValue(GetSelectedPlaceableObject()->GetObjectData()->ConstructionCost, true, false);
 			for(FIntPoint cells : GetSelectedPlaceableObject()->OccupiedCells)
 			{
 				ChangeOccupancyData(cells, false);
@@ -1118,25 +1082,11 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
   @Args:     int32 ObjectSide
              PlaceableObject's Outline Color determining demolition
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void ABuildManager::SetOutlineColor(int32 ObjectSide)
+void ABuildManager::SetOutlineColor()
 {
 	if(IsValid(GetPCI()))
 	{
-		switch (ObjectSide)
-		{
-		case 0:
-			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), PlayerOutlineColor);
-			break;
-		case 1:
-			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), EnemyOutlineColor);
-			break;
-		case 2:
-			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), NeturalOutlineColor);
-			break;
-		default:
-			GetPCI()->SetVectorParameterValue(FName("OutlineColor"), NeturalOutlineColor);
-			break;
-		}
+		GetPCI()->SetVectorParameterValue(FName("OutlineColor"), OutlineColor);
 	}
 }
 

@@ -6,36 +6,34 @@
 #include "UObject/NoExportTypes.h"
 #include "Math.h"
 #include "ConstructionCost.h"
-#include "PlaceableObjectsData.generated.h"
+#include "ObjectData.generated.h"
 
 class APlaceableObjectBase;
-class APlacerObjectBase;
+class APlacer;
 
 USTRUCT(BlueprintType)
-struct FPlaceableObjectData : public FTableRowBase
+struct FObjectData : public FTableRowBase
 {
 	GENERATED_USTRUCT_BODY()
 
-	FPlaceableObjectData()
-	: ObjectPlacerClass(nullptr)
+	FObjectData()
+	: PlacerClass(nullptr)
 	, PlacaebleObjectClass(nullptr)
 	, ConstructionCost()
 	, ObjectSize()
-	, ReturnResourcesPercent(0)
-	, HealthPoints(0)
 	, Icon(nullptr)
 	, ProceedingMesh(nullptr)
 	, Mesh(nullptr)
 	, Name()
 	, Description()
-	, EnableOutline()
-	, EnableHpBar()
-	, ResourceType(0)
+	, ResourceType(-1)
 	, IsProductionFacility(false)
+	, IsResidentFacility(false)
+	, HappinessFacilityType(-1)
 	{};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	TSubclassOf<APlacerObjectBase> ObjectPlacerClass;
+	TSubclassOf<APlacer> PlacerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	TSubclassOf<APlaceableObjectBase> PlacaebleObjectClass;
@@ -45,12 +43,6 @@ struct FPlaceableObjectData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	FIntPoint ObjectSize;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	int32 ReturnResourcesPercent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	float HealthPoints;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	TObjectPtr<UTexture2D> Icon;
@@ -67,12 +59,6 @@ struct FPlaceableObjectData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	FText Description;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	bool EnableOutline;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
-	bool EnableHpBar;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlaceableObjectData")
 	int32 ResourceType; // 0:Units 1:Wood 2:Rock 3:Iron 4:Coal
 

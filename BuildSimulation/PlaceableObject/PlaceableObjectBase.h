@@ -7,7 +7,7 @@
 #include "Build/ResourceManager.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
-#include "Data/PlaceableObjectsData.h"
+#include "Data/ObjectData.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "PlaceableObjectBase.generated.h"
@@ -146,11 +146,8 @@ public:
 	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
 	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
 
-	FORCEINLINE int32 GetObjectSide() const { return ObjectSide; }
-	FORCEINLINE void SetObjectSide(int32 InObjectSide) { ObjectSide = InObjectSide; }
-
-	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
-	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
+	FORCEINLINE FObjectData* GetObjectData() const { return ObjectData; }
+	FORCEINLINE void SetObjectData(FObjectData* InObjectData) { ObjectData = InObjectData; }
 
 	FORCEINLINE FName GetRowName() const { return RowName; }
 	FORCEINLINE void SetRowName(FName InRowName) { RowName = InRowName; }
@@ -167,14 +164,11 @@ private:
 	/* Local Function Library */
 	void LSwapObjectOutline(bool IsEnable);
 
-	FPlaceableObjectData* ObjectData;
+	FObjectData* ObjectData;
 
 	/* Setting Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	FName RowName;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
-	int32 ObjectSide = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	float StartingHealthPercent;
@@ -185,12 +179,6 @@ private:
 	/* ObjectData Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	FIntPoint ObjectSize = FIntPoint(1,1);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
-	bool bOutlineEnabled = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
-	bool bHPBarEnabled = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	float HP;
@@ -219,11 +207,6 @@ private:
 	
 
 	/* Getter & Setter */
-	FORCEINLINE bool GetbOutlineEnabled() const { return bOutlineEnabled; }
-	FORCEINLINE void SetbOutlineEnabled(bool InOutlineEnabled) { bOutlineEnabled = InOutlineEnabled; }
-
-	FORCEINLINE bool GetbHPBarEnabled() const { return bHPBarEnabled; }
-	FORCEINLINE void SetbHPBarEnabled(bool InHPBarEnabled) { bHPBarEnabled = InHPBarEnabled; }
 
 	FORCEINLINE float GetHP() const { return HP; }
 	FORCEINLINE void SetHP(float InHP) { HP = InHP; }

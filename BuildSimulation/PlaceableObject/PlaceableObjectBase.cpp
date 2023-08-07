@@ -4,7 +4,7 @@
 
 #include <queue>
 
-#include "Data/PlaceableObjectsData.h"
+#include "Data/ObjectData.h"
 #include "Game/BSGameSingleton.h"
 
 
@@ -127,8 +127,7 @@ void APlaceableObjectBase::OnEndCursorOver(UPrimitiveComponent* TouchedComponent
   
   @Summary:  Setup PlaceableObject called when object construct
 
-  @Modifies: [ObjectData, ObjectSize, HP, MaxHP, bOutlineEnabled,
-              bHPBarEnabled, StartingHealthPercent, ObjectDirection,
+  @Modifies: [ObjectData, ObjectSize, ObjectDirection,
               OccupiedCenterCell, ObjectHeight].
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlaceableObjectBase::SetupPlaceableObject()
@@ -150,7 +149,7 @@ void APlaceableObjectBase::SetupPlaceableObject()
 	}
 	
 	FName LocalRowName = GetRowName();
-	FPlaceableObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FPlaceableObjectData>(LocalRowName, "");
+	FObjectData* OutRow = UBSGameSingleton::Get().GetPlaceableObjectDataTable()->FindRow<FObjectData>(LocalRowName, "");
 
 	if (OutRow != nullptr)
 	{
@@ -158,9 +157,7 @@ void APlaceableObjectBase::SetupPlaceableObject()
 		ObjectMesh->SetStaticMesh(OutRow->ProceedingMesh.Get());
 		SetObjectData(OutRow);
 		SetObjectSize(GetObjectData()->ObjectSize);
-		SetMaxHP(GetObjectData()->HealthPoints);
 		SetHP(GetMaxHP() * GetStartingHealthPercent());
-		SetbOutlineEnabled(GetObjectData()->EnableOutline);
 		SetStartingHealthPercent(FMath::Clamp<float>(GetStartingHealthPercent(), 0.0f, 100.0f));
 		SetIsConstructionFacility(GetObjectData()->IsProductionFacility);
 		SetHappinessFacilityType(GetObjectData()->HappinessFacilityType);
@@ -186,16 +183,13 @@ void APlaceableObjectBase::SetupPlaceableObject()
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlaceableObjectBase::SetupOutline()
 {
-	if (GetbOutlineEnabled())
+	TArray<UActorComponent*> MeshComponents = GetComponentsByClass(UStaticMeshComponent::StaticClass());
+	if(MeshComponents.Num() > 0)
 	{
-		TArray<UActorComponent*> MeshComponents = GetComponentsByClass(UStaticMeshComponent::StaticClass());
-		if(MeshComponents.Num() > 0)
-		{
-			for (int32 i = 0; i < MeshComponents.Num(); i++)
-				Meshesforoutline.Add(Cast<UStaticMeshComponent>(MeshComponents[i]));
-			for (int32 j = 0; j < GetMeshesforoutline().Num(); j++)
-				GetMeshesforoutline()[j]->SetRenderCustomDepth(true);
-		}
+		for (int32 i = 0; i < MeshComponents.Num(); i++)
+			Meshesforoutline.Add(Cast<UStaticMeshComponent>(MeshComponents[i]));
+		for (int32 j = 0; j < GetMeshesforoutline().Num(); j++)
+			GetMeshesforoutline()[j]->SetRenderCustomDepth(true);
 	}
 }
 
@@ -237,19 +231,11 @@ void APlaceableObjectBase::SwapObjectHighlighting(bool IsEnable)
 {
 	if(IsEnable)
 	{
-		// Outline Setting
-		if(GetbOutlineEnabled())
-			LSwapObjectOutline(true);
-		// HP Bar Setting
-		if(GetbHPBarEnabled()) {} 
+		LSwapObjectOutline(true);
 	}
 	else
 	{
-		// Outline Setting
-		if(GetbOutlineEnabled())
-			LSwapObjectOutline(false);
-		// HP Bar Setting
-		if(GetbHPBarEnabled() && GetbObjectSelected() == false) {}
+		LSwapObjectOutline(false);
 	}
 }
 
@@ -787,9 +773,6 @@ void APlaceableObjectBase::LSwapObjectOutline(bool IsEnable)
 	{
 		if (IsEnable)
 		{
-			if (GetObjectSide() == 0)
-				GetMeshesforoutline()[i]->SetCustomDepthStencilValue(1);
-			else
 				GetMeshesforoutline()[i]->SetCustomDepthStencilValue(1);
 		}
 		else

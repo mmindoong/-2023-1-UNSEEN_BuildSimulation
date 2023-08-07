@@ -19,7 +19,7 @@ public:
 	UBSHUD(const FObjectInitializer& ObjectInitializer);
 	
 protected:
-	//virtual void NativeConstruct() override;
+	virtual void NativeConstruct() override;
 
 public:
 	UFUNCTION()

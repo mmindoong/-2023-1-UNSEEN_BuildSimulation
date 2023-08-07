@@ -3,8 +3,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "PlaceableObject//PlaceableObjectBase.h"
-#include "Placer/PlacerObjectBase.h"
-#include "Data/PlaceableObjectsData.h"
+#include "Placer/Placer.h"
+#include "Data/ObjectData.h"
 #include "GridSystemComponent.h"
 #include "ResourceActorComponent.h"
 #include "Containers/Map.h"
@@ -64,9 +64,6 @@ public:
 	void DeselectPlaceableObject();
 	
 	UFUNCTION(BlueprintCallable, Category = "Main")
-	void DetectMouseDrag();
-
-	UFUNCTION(BlueprintCallable, Category = "Main")
 	void RotateObject(bool bLeft);
 
 	/* Build Functions */
@@ -111,7 +108,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Data|Object")
 	void SetupObjectData(FIntPoint Cell, APlaceableObjectBase* PlaceableObject);
 	
-	
 	/* Resource Functions */
 	UFUNCTION(BlueprintCallable, Category = "Resource")
 	void UpdateResourcesValue(FConstructionCost Resource, bool Add, bool Subtract);
@@ -131,29 +127,16 @@ protected:
 
 
 private:
-	
 	/* Settings Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	FLinearColor PlayerOutlineColor = FLinearColor::Green;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	FLinearColor EnemyOutlineColor = FLinearColor::Red;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	FLinearColor NeturalOutlineColor = FLinearColor::Yellow;
+	FLinearColor OutlineColor = FLinearColor::Green;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	UMaterialParameterCollection* Collection;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	UMaterialParameterCollectionInstance* PCI;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	bool bTraceComplex = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	float StartDragInstance;
-
+	
 	/* Data Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data", meta = (AllowPrivateAccess = "true"))
 	TMap<FIntPoint, int32> OccupancyData; // True : 1, False : 0
@@ -177,12 +160,6 @@ private:
 	FConstructionCost PlayerResources;
 
 	/* Object Variables */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class APlaceableObjectBase> PlaceableObjectBaseClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class APlacerObjectBase> PlacerObjectBaseClass;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
 	APlaceableObjectBase* PlaceableObjectBase;
 	
@@ -215,13 +192,12 @@ private:
 	FVector StartLocationUnderCursor;
 
 
-	void SetOutlineColor(int32 ObjectSide);
+	void SetOutlineColor();
 	// Resource Check
 	bool CheckifEnoughResources(FConstructionCost InCost);
 
 	
 	/* Getter & Setter */
-
 	FORCEINLINE APlaceableObjectBase* GetPlaceableObjectUnderCursor() const { return PlaceableObjectUnderCursor; }
 	FORCEINLINE void SetPlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectUnderCursor) { PlaceableObjectUnderCursor = InPlaceableObjectUnderCursor; }
 
@@ -245,12 +221,6 @@ private:
 
 	FORCEINLINE UMaterialParameterCollectionInstance* GetPCI() const { return PCI; }
 	FORCEINLINE void SetPCI(UMaterialParameterCollectionInstance* InPCI) { PCI = InPCI; }
-
-	FORCEINLINE bool GetbTraceComplex() const { return bTraceComplex; }
-	FORCEINLINE void SetbTraceComplex(bool InbTraceComplex) { bTraceComplex = InbTraceComplex; }
-
-	FORCEINLINE float GetStartDragInstance() const { return StartDragInstance; }
-	FORCEINLINE void SetStartDragInstance(float InStartDragInstance) { StartDragInstance= InStartDragInstance; }
 
 	FORCEINLINE FVector GetLocationUnderCursorCamera() const { return LocationUnderCursorCamera; }
 	FORCEINLINE void SetLocationUnderCursorCamera(FVector InLocationUnderCursorCamera) { LocationUnderCursorCamera = InLocationUnderCursorCamera; }

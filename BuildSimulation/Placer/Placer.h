@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Data/PlaceableObjectsData.h"
-#include "PlacerObjectBase.generated.h"
+#include "Data/ObjectData.h"
+#include "Placer.generated.h"
 
 class APlaceableObjectBase;
 UCLASS()
-class BUILDSIMULATION_API APlacerObjectBase : public AActor
+class BUILDSIMULATION_API APlacer : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	APlacerObjectBase();
+	APlacer();
 
 protected:
 	// Called when the game starts or when spawned
@@ -23,9 +23,6 @@ protected:
 
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	/* Parent Functions */
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void SetupObjectPlacer();
@@ -38,10 +35,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void RotateObjectPlacer(bool bLeft);
-
-	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
-	void HidePlaceIndicators();
-
+	
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void CreateIndicatorMesh(bool bPlaceEnabled);
 
@@ -50,7 +44,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
 	TArray<FIntPoint> ObjectCellLocation;
-
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> ObjectMesh;
@@ -72,11 +65,8 @@ public:
 	
 	
 	/* Public Getter & Setter */
-	FORCEINLINE bool GetbCanbeDraggged() const { return bCanbeDraggged; }
-	FORCEINLINE void SetbCanbeDraggged(bool InbCanbeDraggged) { bCanbeDraggged = InbCanbeDraggged; }
-
-	FORCEINLINE FPlaceableObjectData* GetObjectData() const { return ObjectData; }
-	FORCEINLINE void SetObjectData(FPlaceableObjectData* InObjectData) { ObjectData = InObjectData; }
+	FORCEINLINE FObjectData* GetObjectData() const { return ObjectData; }
+	FORCEINLINE void SetObjectData(FObjectData* InObjectData) { ObjectData = InObjectData; }
 
 	FORCEINLINE FIntPoint GetObjectSize() const { return ObjectSize; }
 	FORCEINLINE void SetObjectSize(FIntPoint InObjectSize) { ObjectSize = InObjectSize; }
@@ -95,7 +85,7 @@ public:
 
 	
 private:
-	FPlaceableObjectData* ObjectData;
+	FObjectData* ObjectData;
 
 	/* Setting Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
@@ -106,9 +96,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	UMaterialInterface* BuildingRejectedMaterial;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
-	bool bCanbeDraggged;
 
 	/* Object Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object", meta = (AllowPrivateAccess = "true"))
