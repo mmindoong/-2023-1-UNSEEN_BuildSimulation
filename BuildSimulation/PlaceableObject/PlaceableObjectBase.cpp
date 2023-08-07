@@ -128,7 +128,7 @@ void APlaceableObjectBase::OnEndCursorOver(UPrimitiveComponent* TouchedComponent
   @Summary:  Setup PlaceableObject called when object construct
 
   @Modifies: [ObjectData, ObjectSize, ObjectDirection,
-              OccupiedCenterCell, ObjectHeight].
+              OccupiedCenterCell].
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void APlaceableObjectBase::SetupPlaceableObject()
 {
@@ -157,8 +157,6 @@ void APlaceableObjectBase::SetupPlaceableObject()
 		ObjectMesh->SetStaticMesh(OutRow->ProceedingMesh.Get());
 		SetObjectData(OutRow);
 		SetObjectSize(GetObjectData()->ObjectSize);
-		SetHP(GetMaxHP() * GetStartingHealthPercent());
-		SetStartingHealthPercent(FMath::Clamp<float>(GetStartingHealthPercent(), 0.0f, 100.0f));
 		SetIsConstructionFacility(GetObjectData()->IsProductionFacility);
 		SetHappinessFacilityType(GetObjectData()->HappinessFacilityType);
 		SetIsResidentFacility(GetObjectData()->IsResidentFacility);
@@ -331,6 +329,8 @@ bool APlaceableObjectBase::FindClosestUnits(int32 NumActorsToFind, TArray<AActor
 bool APlaceableObjectBase::FindClosestInputs(int32 ResourceSetType, TSubclassOf<AActor> FindActor, int32 NumActorsToFind,
 	TArray<AActor*>& OutActors)
 {
+	if(NumActorsToFind == 0)
+		return false;
 	TArray<AActor*> EnabledActors;
 	TArray<AActor*> GetActors;
 
@@ -341,7 +341,7 @@ bool APlaceableObjectBase::FindClosestInputs(int32 ResourceSetType, TSubclassOf<
 	{
 		switch (ResourceSetType)
 		{
-		case 0:
+		case 0: 
 			if(!ResourceManager->Units.Contains(Actor) && IsValid(Actor))
 				EnabledActors.Add(Actor);
 			break;

@@ -153,7 +153,7 @@ void APlacer::DeactivateObjectPlacer()
   
   @Modifies: [ObjectMesh, BuildDirection]
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-void APlacer::RotateObjectPlacer(bool bLeft)
+void APlacer::Rotate(bool bLeft)
 {
 	SetObjectSize(FIntPoint(GetObjectSize().Y, GetObjectSize().X));
 	float DeltaRotationYaw = bLeft ? -90.0f : 90.0f;
@@ -192,7 +192,7 @@ void APlacer::CreateIndicatorMesh(bool bPlaceEnabled)
 	
 }
 
-void APlacer::UpdateMeshMatDependingAmountOfResources(bool bIsEnoughResource)
+void APlacer::UpdateMeshMaterial(bool bIsEnoughResource)
 {
 	if(bIsEnoughResource)
 	{

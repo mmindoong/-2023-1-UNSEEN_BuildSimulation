@@ -11,7 +11,7 @@
 APlaceableObject_House::APlaceableObject_House() 
 {
 	InputResource = FConstructionCost();
-	FConstructionCost Output = FConstructionCost(0, FFoodData(), 0, 0,0, 0, 1, 0);
+	FConstructionCost Output = FConstructionCost(0, 0,0,0, 0, 0,0, 0, 1, 0);
 	OutputResource = Output;
 	
 }

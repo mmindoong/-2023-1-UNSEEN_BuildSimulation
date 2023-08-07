@@ -74,7 +74,7 @@ void ABuildManager::BeginPlay()
 		}
 	}
 	SetPlayerController(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	UpdateResourcesValue(FConstructionCost(0, FFoodData(10,10,10), 10, 20, 10, 10, 10,0), true, false);
+	UpdateResourcesValue(FConstructionCost(0, 10,10,10, 10, 20, 10, 10, 10,0), true, false);
 }
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -124,7 +124,7 @@ void ABuildManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* InPlaceableObjectBase, bool IsRemove)
 {
-	if(IsRemove && GetPlaceableObjectUnderCursor() == InPlaceableObjectBase) // Cursor End Overlap 에서 객체 취소
+	if(IsRemove && GetPlaceableObjectUnderCursor() == InPlaceableObjectBase) // Cursor End Overlap ???? ??? ???
 	{
 		SetPlaceableObjectUnderCursor(nullptr);
 	}
@@ -133,7 +133,7 @@ void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* I
 		SetPlaceableObjectUnderCursor(InPlaceableObjectBase);
 		if(IsValid(GetPlaceableObjectUnderCursor()))
 		{
-			// Demolition이 가능한지 판단
+			// Demolition?? ???????? ???
 			if(GridSystemComponent->GetbDemolitionToolEnabled())
 			{
 				if(IsValid(GetPCI()))
@@ -156,7 +156,7 @@ void ABuildManager::CallUpdatePlaceableObjectUnderCursor(APlaceableObjectBase* I
   
   @Category: Main
  
-  @Summary:  Left Сlick to select objects under Cursor
+  @Summary:  Left ??lick to select objects under Cursor
 
   @Modifies: [bInteractStarted, bDragWasInterrupted,
              StartLocationUnderCursor]
@@ -226,13 +226,13 @@ void ABuildManager::BuildPlaceableObject()
 	
 	if(GetWorld() && GridSystemComponent->GetbBuildObjecEnabled())
 	{
-		// DT에 저장되어 있는 Object 자식 클래스로 호출
+		// DT?? ?????? ??? Object ??? ??????? ???
 		SetPlaceableObjectBase(Cast<APlaceableObjectBase>(GetWorld()->SpawnActor<AActor>(GridSystemComponent->GetActivePlacer()->GetObjectData()->PlacaebleObjectClass, SpawnLocation, SpawnRotator, SpawnParams)));
 		GetPlaceableObjectBase()->SetRowName(GridSystemComponent->GetActivePlacer()->GetRowName());
 		GetPlaceableObjectBase()->SetBuildDirection(GridSystemComponent->GetActivePlacer()->GetBuildDirection());
 		// Object Cell Location setting
 		GetPlaceableObjectBase()->ObjectCellLocation = GridSystemComponent->GetActivePlacer()->ObjectCellLocation;
-		// Object RowName, Data 설정 후 Setting 진행
+		// Object RowName, Data ???? ?? Setting ????
 		GetPlaceableObjectBase()->SetupPlaceableObject();
 		GetPlaceableObjectBase()->SetupOutline();
 		UpdateResourcesValue(GetPlaceableObjectBase()->GetObjectData()->ConstructionCost, false, true);
@@ -240,9 +240,9 @@ void ABuildManager::BuildPlaceableObject()
 	
 	if(IsValid(GetPlaceableObjectBase()))
 	{
-		// BuildPlaceableObject 함수로 호출한 경우 true, 에디터에서 배치한 경우 false
+		// BuildPlaceableObject ????? ????? ??? true, ????????? ????? ??? false
 		GetPlaceableObjectBase()->IsDynamicData = true;
-		// Build Manger에서 점유된 셀 정보 세팅해주기
+		// Build Manger???? ?????? ?? ???? ?????????
 		GetPlaceableObjectBase()->SetOccupiedCenterCell(FIntPoint(GetActorLocation().X, GetActorLocation().Y));
 		TArray<FIntPoint> GetOccupiedCells = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()),
 			GetPlaceableObjectBase()->GetObjectSize());
@@ -256,7 +256,7 @@ void ABuildManager::BuildPlaceableObject()
 		// Binding event when PlaceableObject construct
 		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
 
-		// 행복도 건물을 세운 경우 주거 시설인 object들에 대해서 행복건물 반경에 따라 HappinessTypeData 설정하기
+		// ???? ????? ???? ??? ??? ????? object?? ????? ????? ??濡 ???? HappinessTypeData ???????
 		if(GetPlaceableObjectBase()->HappinessFacilityType != 0)
 		{
 			FIntPoint Range;
@@ -281,11 +281,11 @@ void ABuildManager::BuildPlaceableObject()
 				break;
 			}
 			TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()),
-				Range); // 행복 시설 반경만큼 cell 확인
+				Range); // ?? ??? ??游? cell ???
 			
 			for(auto cells : CellsforBuild)
 			{
-				// 행복도 건물 data 반경만큼 설정
+				// ???? ??? data ??游? ????
 				HappinessTypeData.Add(cells, GetPlaceableObjectBase()->HappinessFacilityType);
 			}
 		}
@@ -296,13 +296,13 @@ void ABuildManager::PlaceEditorObject(APlaceableObjectBase* PlaceableObject, FNa
 {
 	if(GetWorld())
 	{
-		// 배치된 Object를 self로 가져와서 설정해줌. 
+		// ????? Object?? self?? ??????? ????????. 
 		SetPlaceableObjectBase(PlaceableObject);
 		GetPlaceableObjectBase()->SetRowName(RowName);
 		GetPlaceableObjectBase()->SetBuildDirection(PlaceableObject->GetBuildDirection());
 		// Object Cell Location setting
 		GetPlaceableObjectBase()->ObjectCellLocation =PlaceableObject->ObjectCellLocation;
-		// Object RowName, Data 설정 후 Setting 진행
+		// Object RowName, Data ???? ?? Setting ????
 		GetPlaceableObjectBase()->SetupPlaceableObject();
 		GetPlaceableObjectBase()->SetupOutline();
 	}
@@ -310,7 +310,7 @@ void ABuildManager::PlaceEditorObject(APlaceableObjectBase* PlaceableObject, FNa
 	if(IsValid(GetPlaceableObjectBase()))
 	{
 		
-		// Build Manger에서 점유된 셀 정보 세팅해주기
+		// Build Manger???? ?????? ?? ???? ?????????
 		GetPlaceableObjectBase()->SetOccupiedCenterCell(FIntPoint(GetActorLocation().X, GetActorLocation().Y));
 		TArray<FIntPoint> GetOccupiedCells = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(PlaceableObject->GetActorLocation()),
 			GetPlaceableObjectBase()->GetObjectSize());
@@ -324,7 +324,7 @@ void ABuildManager::PlaceEditorObject(APlaceableObjectBase* PlaceableObject, FNa
 		// Binding event when PlaceableObject construct
 		GetPlaceableObjectBase()->UpdatePlaceableObjectCursorEvent.BindUFunction(this, FName("CallUpdatePlaceableObjectUnderCursor"));
 
-		// 행복도 건물을 세운 경우 주거 시설인 object들에 대해서 행복건물 반경에 따라 HappinessTypeData 설정하기
+		// ???? ????? ???? ??? ??? ????? object?? ????? ????? ??濡 ???? HappinessTypeData ???????
 		if(PlaceableObject->HappinessFacilityType != 0)
 		{
 			FIntPoint Range;
@@ -349,11 +349,11 @@ void ABuildManager::PlaceEditorObject(APlaceableObjectBase* PlaceableObject, FNa
 				break;
 			}
 			TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetPlaceableObjectBase()->GetActorLocation()),
-				Range); // 행복 시설 반경만큼 cell 확인
+				Range); // ?? ??? ??游? cell ???
 			
 			for(auto cells : CellsforBuild)
 			{
-				// 행복도 건물 data 반경만큼 설정
+				// ???? ??? data ??游? ????
 				HappinessTypeData.Add(cells, PlaceableObject->HappinessFacilityType);
 			}
 		}
@@ -364,9 +364,9 @@ void ABuildManager::SearchHappinessFacility_Resident(APlaceableObjectBase* Place
 {
 	if(IsValid(PlaceableObject))
 	{
-		// 현재 건물의 cell을 key로 가진 행복도 data가 있는지 체크
+		// ???? ????? cell?? key?? ???? ???? data?? ????? ??
 		TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(PlaceableObject->GetActorLocation()),
-				PlaceableObject->GetObjectSize()); // 행복 시설 반경만큼 cell 확인
+				PlaceableObject->GetObjectSize()); // ?? ??? ??游? cell ???
 		
 		for(FIntPoint ObjectCell : CellsforBuild)
 		{
@@ -447,32 +447,32 @@ void ABuildManager::SelectPlaceableObject()
 {
 	if (GridSystemComponent->GetbBuildToolEnabled() == false) 
 	{
-		// 1. Placeable Object 아래에 커서가 존재할 경우
+		// 1. Placeable Object ????? Ŀ???? ?????? ???
 		if(IsValid(GetPlaceableObjectUnderCursor()))
 		{
-			// 1-1. Placeable Object 객체가 기존에 선택된것인지 체크->오브젝트 상태변경
+			// 1-1. Placeable Object ????? ?????? ?????????? ??->??????? ???º???
 			if (IsValid(GetSelectedPlaceableObject()))
 			{
 				if (GetPlaceableObjectUnderCursor() != GetSelectedPlaceableObject())
 				{
 					GetSelectedPlaceableObject()->K2_OnHideDetailWidget();
-					GetSelectedPlaceableObject()->SetObjectSelectedMode(false); // 기존에 선택된 Object는 비워줌.
+					GetSelectedPlaceableObject()->SetObjectSelectedMode(false); // ?????? ????? Object?? ?????.
 				}
 			}
-			SetSelectedPlaceableObject(PlaceableObjectUnderCursor); // 커서 아래있는 오브젝트가 현재 선택된 오브젝트로 변경
+			SetSelectedPlaceableObject(PlaceableObjectUnderCursor); // Ŀ?? ?????? ????????? ???? ????? ????????? ????
 			GridSystemComponent->SetbPlaceableObjectSelected(true);
 			GetSelectedPlaceableObject()->SetObjectSelectedMode(true);
-			// 건축 상세 UI 띄우기
+			// ???? ?? UI ????
 			GetSelectedPlaceableObject()->K2_OnDisplayDetailWidget();
-			// 클릭시 Outline, Material Color 변경
+			// ????? Outline, Material Color ????
 			SetOutlineColor();
 			if(IsValid(GetPCI()))
 				GetPCI()->SetScalarParameterValue(FName("EnableShading"), 0.4f);
 		}
-		// 2. Placeable Object 아래에 커서가 존재하지 않는 경우
+		// 2. Placeable Object ????? Ŀ???? ???????? ??? ???
 		else
 		{
-			GridSystemComponent->SetbPlaceableObjectSelected(false); // 선택된 상태가 아닌 것으로 판단
+			GridSystemComponent->SetbPlaceableObjectSelected(false); // ????? ???°? ??? ?????? ???
 			if (IsValid(GetSelectedPlaceableObject())) 
 			{
 				GetSelectedPlaceableObject()->K2_OnHideDetailWidget();
@@ -518,7 +518,7 @@ M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void ABuildManager::RotateObject(bool bLeft)
 {
 	if(GridSystemComponent->GetbBuildToolEnabled())
-		GridSystemComponent->GetActivePlacer()->RotateObjectPlacer(true);
+		GridSystemComponent->GetActivePlacer()->Rotate(true);
 }
 
 
@@ -554,14 +554,14 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 	{
 		for (int  Y = 0;  Y < GridSystemComponent->GetGridTileCount().Y - 1;  Y += 8)
 		{
-			// 0 : 녹색, 1: 노랑, 2: 빨강
+			// 0 : ???, 1: ???, 2: ????
 			int32 ColorIncludedRed = FMath::RandRange(0, 2);
 			int32 ColorExcludedRed = FMath::RandRange(0, 1);
 			bool isRColor = FMath::RandBool();
 			int32 BackGroundColor = isRColor ? ColorIncludedRed : ColorExcludedRed;
 			int32 SelectedArr[8][8] = { 0 };
 
-			// 패턴의 색상 조합
+			// ?????? ???? ????
 			int32 pattern1[8][8] = {
 				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, 1, 1, 1, 1},
 				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, 1, 1, 1, 1},
@@ -573,7 +573,7 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 				{0, 0, 0, 0, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor}
 			};
 
-			// 패턴의 색상 조합
+			// ?????? ???? ????
 			int32 pattern2[8][8] = {
 				{BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor, BackGroundColor,},
 				{BackGroundColor, 0, 0, 0, 0, 0, 0, BackGroundColor,},
@@ -623,7 +623,7 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 					FTransform TileTransform;
 					TileTransform.SetLocation(TileTransformLocation);
 					TileTransform.SetScale3D(TileTransformScale);
-					// Ground 체크
+					// Ground ??
 					FHitResult HitResult;
 					FVector StartLocation = TileTransformLocation + FVector(0.0f, 0.0f, 100.0f);
 					FVector EndLocation =  TileTransformLocation +  FVector(0.0f, 0.0f, -500.0f);;
@@ -645,7 +645,7 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 								*/
 
 					
-					TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // 히트 가능한 오브젝트 유형들.
+					TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // ??? ?????? ??????? ??????.
 					TEnumAsByte<EObjectTypeQuery> Ground_OBJ = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel3);
 					ObjectTypes.Add(Ground_OBJ);
 					bool IsHitResult = UKismetSystemLibrary::LineTraceSingleForObjects(
@@ -672,7 +672,7 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 					
 					if(SelectedArr[x][y] == 0)
 					{
-						// 녹색
+						// ???
 						// SetCustomDataValue - R Parameter
 						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, 0.0f);
 						// SetCustomDataValue - G Parameter
@@ -686,7 +686,7 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 					else if(SelectedArr[x][y] == 1)
 					{
 						
-						// 노란색
+						// ?????
 						// SetCustomDataValue - R Parameter
 						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, 1.0f);
 						// SetCustomDataValue - G Parameter
@@ -699,7 +699,7 @@ void ABuildManager::SpawnTileMap(FVector CenterLocation, FVector TileSize, FIntP
 					}
 					else if(SelectedArr[x][y] == 2)
 					{
-						// 빨간색
+						// ??????
 						// SetCustomDataValue - R Parameter
 						InstancedStaticMeshComponent->SetCustomDataValue(InstanceIndex, 0, 1.0f);
 						// SetCustomDataValue - G Parameter
@@ -762,7 +762,7 @@ void ABuildManager::DrawPlacementIndicators()
 		if(IsValid(GridSystemComponent->GetActivePlacer()))
 		{
 			bool IsEnoughResource = CheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost);
-			GridSystemComponent->GetActivePlacer()->UpdateMeshMatDependingAmountOfResources(IsEnoughResource);	
+			GridSystemComponent->GetActivePlacer()->UpdateMeshMaterial(IsEnoughResource);	
 		}
 		GridSystemComponent->SetbBuildObjecEnabled(true);
 		// Set Placer Object Mesh's World Location
@@ -787,12 +787,12 @@ void ABuildManager::DrawPlacementIndicators()
 			FVector CellLocationLOCAL = GridSystemComponent->GetCellLocation(CellsforBuild[Index], GetLocationUnderCursorCamera(),bSuccessforIndicators);
 			GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetWorldLocation(CellLocationLOCAL);
 
-			// 생산 시설의 경우 토지의 비옥도 체크
+			// ???? ????? ??? ?????? ????? ??
 			if(bSuccessforIndicators && GridSystemComponent->GetActivePlacer()->GetObjectData()->IsProductionFacility)
 			{
 				if(CheckTileMapData(CellsforBuild[Index]))
 				{
-					// 해당 공간에 각 Indicator Cell들을 놓을 수 있는지
+					// ??? ?????? ?? Indicator Cell???? ???? ?? ?????
 					if(CheckOccupancyData(CellsforBuild[Index])==false)
 					{
 						GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceAcceptedMaterial);
@@ -809,10 +809,10 @@ void ABuildManager::DrawPlacementIndicators()
 					GridSystemComponent->SetbBuildObjecEnabled(false);
 				}
 			}
-			// Resource가 필요한 Object인지 확인
+			// Resource?? ????? Object???? ???
 			else if(bSuccessforIndicators && IsPossible)
 			{
-				// 해당 공간에 각 Indicator Cell들을 놓을 수 있는지
+				// ??? ?????? ?? Indicator Cell???? ???? ?? ?????
 				if(CheckOccupancyData(CellsforBuild[Index])==false)
 				{
 					GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceAcceptedMaterial);
@@ -823,7 +823,7 @@ void ABuildManager::DrawPlacementIndicators()
 					GridSystemComponent->SetbBuildObjecEnabled(false);
 				}	
 			}
-			else // Ground 충돌 감지 못한 경우
+			else // Ground ?浹 ???? ???? ???
 			{
 				GridSystemComponent->GetActivePlacer()->PlaceIndicators[Index]->SetMaterial(0, GridSystemComponent->GetActivePlacer()->PlaceRejectedMaterial);
 				GridSystemComponent->SetbBuildObjecEnabled(false);
@@ -896,10 +896,10 @@ bool ABuildManager::CheckTileMapData(FIntPoint Cell)
 
 bool ABuildManager::CheckResourceMapData(int32 ActivePlacerResourceType, FIntPoint Cell)
 {
-	// 해당 셀이 Resource가 있는지 체크
+	// ??? ???? Resource?? ????? ??
 	if (ResourceTypeData.Contains(Cell))
 	{
-		//현재 셀의 Resouorce Type과 현재 오브젝트과 키 확인
+		//???? ???? Resouorce Type?? ???? ????????? ? ???
 		const int32& Value = ResourceTypeData[Cell];
 		if(Value != ActivePlacerResourceType)
 			return false;
@@ -943,8 +943,8 @@ void ABuildManager::DestorySelectedPlaceableObject()
 			{
 				ChangeOccupancyData(cells, false);
 			}
-			// 행복도 건물 / 주거 건물을 세운 경우 주거 시설인 object들에 대해서 행복건물 반경에 따라 HappinessTypeData 탐색하기
-			if(GetSelectedPlaceableObject()->HappinessFacilityType != 0) // 행복도 건물인 경우
+			// ???? ??? / ??? ????? ???? ??? ??? ????? object?? ????? ????? ??濡 ???? HappinessTypeData ??????
+			if(GetSelectedPlaceableObject()->HappinessFacilityType != 0) // ???? ????? ???
 			{
 				FIntPoint Range;
 				switch (GetSelectedPlaceableObject()->HappinessFacilityType)
@@ -968,7 +968,7 @@ void ABuildManager::DestorySelectedPlaceableObject()
 					break;
 				}
 				TArray<FIntPoint> CellsforBuild = GridSystemComponent->GetCellsinRectangularArea(GridSystemComponent->GetCellfromWorldLocation(GetSelectedPlaceableObject()->GetActorLocation()),
-					Range); // 행복 시설 반경만큼 cell 확인
+					Range); // ?? ??? ??游? cell ???
 				
 				for(FIntPoint cells : CellsforBuild)
 				{
@@ -1008,12 +1008,11 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 {
 	if(Add)
 	{
-		FFoodData AddFood = FFoodData(GetPlayerResources().Food.Rice+Resource.Food.Rice,
-			GetPlayerResources().Food.Fruit+ Resource.Food.Fruit,
-			GetPlayerResources().Food.Meat+ Resource.Food.Meat);
 
 		FConstructionCost AddConstruction = FConstructionCost(GetPlayerResources().Gold+Resource.Gold,
-			AddFood,
+			GetPlayerResources().Rice+Resource.Rice,
+			GetPlayerResources().Fruit+ Resource.Fruit,
+			GetPlayerResources().Meat+ Resource.Meat,
 			GetPlayerResources().Wood+Resource.Wood,
 			GetPlayerResources().Rock+Resource.Rock,
 			GetPlayerResources().Iron+Resource.Iron,
@@ -1026,12 +1025,12 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 	}
 	else if(Subtract)
 	{
-		FFoodData SubFood = FFoodData(FMath::Clamp(GetPlayerResources().Food.Rice-Resource.Food.Rice,0,GetPlayerResources().Food.Rice-Resource.Food.Rice),
-		FMath::Clamp(GetPlayerResources().Food.Fruit-Resource.Food.Fruit,0,GetPlayerResources().Food.Fruit-Resource.Food.Fruit),
-		FMath::Clamp(GetPlayerResources().Food.Meat-Resource.Food.Meat,0,GetPlayerResources().Food.Meat-Resource.Food.Meat));
+		
 		
 		FConstructionCost SubConstruction = FConstructionCost(FMath::Clamp(GetPlayerResources().Gold-Resource.Gold, 0 , GetPlayerResources().Gold-Resource.Gold),
-			SubFood,
+		FMath::Clamp(GetPlayerResources().Rice-Resource.Rice,0,GetPlayerResources().Rice-Resource.Rice),
+	FMath::Clamp(GetPlayerResources().Fruit-Resource.Fruit,0,GetPlayerResources().Fruit-Resource.Fruit),
+	FMath::Clamp(GetPlayerResources().Meat-Resource.Meat,0,GetPlayerResources().Meat-Resource.Meat),
 			FMath::Clamp(GetPlayerResources().Wood-Resource.Wood, 0 , GetPlayerResources().Wood-Resource.Wood),
 			FMath::Clamp(GetPlayerResources().Rock-Resource.Rock, 0 , GetPlayerResources().Rock-Resource.Rock),
 			FMath::Clamp(GetPlayerResources().Iron-Resource.Iron, 0 , GetPlayerResources().Iron-Resource.Iron),
@@ -1044,12 +1043,10 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 	}
 	else
 	{
-		FFoodData Food = FFoodData(FMath::Clamp(Resource.Food.Rice,0,Resource.Food.Rice),
-		FMath::Clamp(Resource.Food.Fruit,0,Resource.Food.Fruit),
-		FMath::Clamp(Resource.Food.Meat,0,Resource.Food.Meat));
-		
 		FConstructionCost Construction = FConstructionCost(FMath::Clamp(Resource.Gold, 0, Resource.Gold),
-			Food,	
+		FMath::Clamp(Resource.Rice,0,Resource.Rice),
+	FMath::Clamp(Resource.Fruit,0,Resource.Fruit),
+	FMath::Clamp(Resource.Meat,0,Resource.Meat),	
 		FMath::Clamp(Resource.Wood, 0, Resource.Wood),
 		FMath::Clamp(Resource.Rock, 0, Resource.Rock),
 		FMath::Clamp(Resource.Iron, 0, Resource.Iron),
@@ -1064,7 +1061,7 @@ void ABuildManager::UpdateResourcesValue(FConstructionCost Resource, bool Add, b
 	if(IsValid(GridSystemComponent->GetActivePlacer()))
 	{
 		bool IsEnoughResource = CheckifEnoughResources(GridSystemComponent->GetActivePlacer()->GetObjectData()->ConstructionCost);
-		GridSystemComponent->GetActivePlacer()->UpdateMeshMatDependingAmountOfResources(IsEnoughResource);	
+		GridSystemComponent->GetActivePlacer()->UpdateMeshMaterial(IsEnoughResource);	
 	}
 	
 	
@@ -1108,8 +1105,8 @@ M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 bool ABuildManager::CheckifEnoughResources(FConstructionCost InCost)
 {
 	
-	bool CheckPlayerResource = GetPlayerResources().Gold - InCost.Gold >= 0 && GetPlayerResources().Food.Fruit - InCost.Food.Fruit >=0 && GetPlayerResources().Food.Rice - InCost.Food.Rice >=0
-		&& GetPlayerResources().Food.Meat - InCost.Food.Meat >=0 && GetPlayerResources().Coal - InCost.Coal >= 0 && GetPlayerResources().Iron - InCost.Iron >= 0
+	bool CheckPlayerResource = GetPlayerResources().Gold - InCost.Gold >= 0 && GetPlayerResources().Fruit - InCost.Fruit >=0 && GetPlayerResources().Rice - InCost.Rice >=0
+		&& GetPlayerResources().Meat - InCost.Meat >=0 && GetPlayerResources().Coal - InCost.Coal >= 0 && GetPlayerResources().Iron - InCost.Iron >= 0
 		&& GetPlayerResources().Rock - InCost.Rock >=0 && GetPlayerResources().Wood - InCost.Wood >=0
 		&& (GetPlayerResources().TotalNum- GetPlayerResources().UsedNum) -  InCost.UsedNum >= 0;
 

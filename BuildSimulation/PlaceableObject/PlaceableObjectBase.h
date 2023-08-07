@@ -112,6 +112,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (ExposeOnSpawn = "true"))
 	bool IsConstructing = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
+	FName RowName;
+
 	/* Facility  Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
 	FConstructionCost InputResource;
@@ -167,11 +170,6 @@ private:
 	FObjectData* ObjectData;
 
 	/* Setting Variables */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
-	FName RowName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
-	float StartingHealthPercent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting", meta = (AllowPrivateAccess = "true"))
 	int32 BuildDirection = 0;
@@ -181,19 +179,10 @@ private:
 	FIntPoint ObjectSize = FIntPoint(1,1);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
-	float HP;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
-	float MaxHP;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	int32 ObjectDirection;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	FIntPoint OccupiedCenterCell = FIntPoint(0, 0);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
-	float ObjectHeight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object Data", meta = (AllowPrivateAccess = "true"))
 	bool IsConstructionFacility = false;
@@ -208,24 +197,12 @@ private:
 
 	/* Getter & Setter */
 
-	FORCEINLINE float GetHP() const { return HP; }
-	FORCEINLINE void SetHP(float InHP) { HP = InHP; }
-
-	FORCEINLINE float GetMaxHP() const { return MaxHP; }
-	FORCEINLINE void SetMaxHP(float InMaxHP) { HP = InMaxHP; }
-
 	FORCEINLINE int32 GetObjectDirection() const { return ObjectDirection; }
 	FORCEINLINE void SetObjectDirection(int InObjectDirection) { ObjectDirection = InObjectDirection; }
-	
-	FORCEINLINE float GetObjectHeight() const { return ObjectHeight; }
-	FORCEINLINE void SetObjectHeight(float InObjectHeight) { ObjectHeight = InObjectHeight; }
 
 	FORCEINLINE TArray<UStaticMeshComponent*> GetMeshesforoutline() const { return Meshesforoutline; }
 	FORCEINLINE void SetMeshesforoutline(TArray<UStaticMeshComponent*> InMeshesforoutline) { Meshesforoutline = InMeshesforoutline; }
-
-	FORCEINLINE float GetStartingHealthPercent() const { return StartingHealthPercent; }
-	FORCEINLINE void SetStartingHealthPercent(float InStartingHealthPercent) { StartingHealthPercent = InStartingHealthPercent; }
-
+	
 	FORCEINLINE bool GetbObjectSelected() const { return bObjectSelected; }
 	FORCEINLINE void SetbObjectSelected(bool InObjectSelected) { bObjectSelected = InObjectSelected; }
 	

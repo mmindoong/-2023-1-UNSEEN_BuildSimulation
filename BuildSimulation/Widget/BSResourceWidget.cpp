@@ -19,11 +19,11 @@ void UBSResourceWidget::UpdatePanelText(const FConstructionCost& PlayerResource)
 	if(GoldText)
 		GoldText->SetText(FText::FromString(FString::FromInt(PlayerResource.Gold)));
 	if(FruitText)
-		FruitText->SetText(FText::FromString(FString::FromInt(PlayerResource.Food.Fruit)));
+		FruitText->SetText(FText::FromString(FString::FromInt(PlayerResource.Fruit)));
 	if(RiceText)
-		RiceText->SetText(FText::FromString(FString::FromInt(PlayerResource.Food.Rice)));
+		RiceText->SetText(FText::FromString(FString::FromInt(PlayerResource.Rice)));
 	if(MeatText)
-		MeatText->SetText(FText::FromString(FString::FromInt(PlayerResource.Food.Meat)));
+		MeatText->SetText(FText::FromString(FString::FromInt(PlayerResource.Meat)));
 	if(WoodText)
 		WoodText->SetText(FText::FromString(FString::FromInt(PlayerResource.Wood)));
 	if(RockText)

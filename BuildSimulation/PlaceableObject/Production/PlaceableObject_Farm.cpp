@@ -11,7 +11,7 @@
 APlaceableObject_Farm::APlaceableObject_Farm(): APlaceableObjectBase()
 {
 	InputResource = FConstructionCost();
-	FConstructionCost Output = FConstructionCost(0, FFoodData(4, 0, 0), 0, 0,0, 0, 0,0);
+	FConstructionCost Output = FConstructionCost(0,4, 0, 0, 0, 0,0, 0, 0,0);
 	OutputResource = Output;
 	
 }

@@ -34,13 +34,13 @@ public:
 	void DeactivateObjectPlacer();
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
-	void RotateObjectPlacer(bool bLeft);
+	void Rotate(bool bLeft);
 	
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
 	void CreateIndicatorMesh(bool bPlaceEnabled);
 
 	UFUNCTION(BlueprintCallable, Category = "ParentFunctions")
-	void UpdateMeshMatDependingAmountOfResources(bool bIsEnoughResource);
+	void UpdateMeshMaterial(bool bIsEnoughResource);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Facility", meta = (AllowPrivateAccess = "true"))
 	TArray<FIntPoint> ObjectCellLocation;
